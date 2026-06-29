@@ -2,8 +2,10 @@ import { supabase } from '@/lib/supabase'
 
 const BUCKET = 'beer-images'
 
-export function getPublicUrl(storagePath: string) {
-  return supabase.storage.from(BUCKET).getPublicUrl(storagePath).data.publicUrl
+export async function getSignedUrl(storagePath: string, expiresIn = 3600): Promise<string | null> {
+  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(storagePath, expiresIn)
+  if (error) return null
+  return data.signedUrl
 }
 
 export async function uploadPhoto(file: File, userId: string, entryId: string): Promise<string> {

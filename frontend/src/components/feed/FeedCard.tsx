@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { formatDistanceToNow } from 'date-fns'
 import { Card } from '@/components/ui/Card'
 import { StarRating } from '@/components/ui/StarRating'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { getPublicUrl } from '@/lib/storage'
+import { getSignedUrl } from '@/lib/storage'
 import { useToggleLike, useAddComment } from '@/hooks/useFeed'
 import type { FeedEntry } from '@/types/database'
 
@@ -17,10 +17,27 @@ export function FeedCard({ item, currentUserId }: FeedCardProps) {
   const { entry, profile, style, photos, likes, comments, userHasLiked } = item
   const [showComments, setShowComments] = useState(false)
   const [commentText, setCommentText] = useState('')
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const toggleLike = useToggleLike()
   const addComment = useAddComment()
 
   const firstPhoto = photos[0]
+
+  useEffect(() => {
+    let mounted = true
+    async function loadPhotoUrl() {
+      if (!firstPhoto?.storage_path) {
+        setPhotoUrl(null)
+        return
+      }
+      const signed = await getSignedUrl(firstPhoto.storage_path)
+      if (mounted) setPhotoUrl(signed)
+    }
+    void loadPhotoUrl()
+    return () => {
+      mounted = false
+    }
+  }, [firstPhoto?.storage_path])
 
   function handleLike() {
     toggleLike.mutate({ entryId: entry.id, hasLiked: userHasLiked })
@@ -37,9 +54,9 @@ export function FeedCard({ item, currentUserId }: FeedCardProps) {
 
   return (
     <Card className="overflow-hidden">
-      {firstPhoto && (
+      {firstPhoto && photoUrl && (
         <img
-          src={getPublicUrl(firstPhoto.storage_path)}
+          src={photoUrl}
           alt={entry.name}
           className="w-full h-56 object-cover"
           loading="lazy"

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { supabase } from '@/lib/supabase'
 import { apiRequest } from '@/lib/api'
 import { useAuth } from '@/hooks/useAuth'
 import { Card } from '@/components/ui/Card'
@@ -11,7 +10,7 @@ export default function InvitePage() {
   const token = params.get('token')
   const navigate = useNavigate()
   const { user, session } = useAuth()
-  const [invite, setInvite] = useState<any | null>(null)
+  const [invite, setInvite] = useState<{ inviter: string | null; group: string | null } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [joining, setJoining] = useState(false)
@@ -22,21 +21,13 @@ export default function InvitePage() {
       setLoading(false)
       return
     }
-    supabase
-      .from('invites')
-      .select('*, friend_groups(name), profiles!referrer_id(display_name, username)')
-      .eq('invite_token', token)
-      .single()
-      .then(({ data, error: e }) => {
-        if (e || !data) {
-          setError('Invite not found or already used.')
-        } else if (new Date(data.expires_at) < new Date()) {
-          setError('This invite has expired.')
-        } else if (data.used_at) {
-          setError('This invite has already been used.')
-        } else {
-          setInvite(data)
-        }
+    apiRequest<{ inviter: string | null; group: string | null }>(`/invites/${token}/preview`)
+      .then((data) => {
+        setInvite(data)
+        setLoading(false)
+      })
+      .catch((e) => {
+        setError((e as Error).message || 'Invite not found or already used.')
         setLoading(false)
       })
   }, [token])
@@ -74,8 +65,8 @@ export default function InvitePage() {
     )
   }
 
-  const inviter = (invite.profiles as any)?.display_name ?? (invite.profiles as any)?.username
-  const group = (invite.friend_groups as any)?.name
+  const inviter = invite?.inviter
+  const group = invite?.group
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">

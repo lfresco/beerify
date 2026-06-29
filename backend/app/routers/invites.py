@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr
 
 from app.auth import get_current_user_id
+from app.config import settings
 from app.supabase_client import get_supabase
 
 router = APIRouter(prefix="/invites", tags=["invites"])
@@ -17,6 +18,41 @@ class CreateInviteRequest(BaseModel):
 
 class AcceptInviteRequest(BaseModel):
     token: str
+
+
+@router.get("/{token}/preview")
+async def preview_invite(token: str):
+    """Return minimal invite info without exposing token table contents to the client."""
+    if len(token) < 16:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid invite token")
+
+    sb = get_supabase()
+    invite_result = (
+        sb.table("invites")
+        .select("id, expires_at, used_at, friend_groups(name), profiles!referrer_id(display_name, username)")
+        .eq("invite_token", token)
+        .single()
+        .execute()
+    )
+
+    if not invite_result.data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invite not found")
+
+    invite = invite_result.data
+    if invite["used_at"] is not None:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Invite already used")
+    if datetime.fromisoformat(invite["expires_at"]) < datetime.now(UTC):
+        raise HTTPException(status_code=status.HTTP_410_GONE, detail="Invite expired")
+
+    inviter = (invite.get("profiles") or {}).get("display_name") or (invite.get("profiles") or {}).get("username")
+    group_name = (invite.get("friend_groups") or {}).get("name")
+
+    return {
+        "status": "ok",
+        "inviter": inviter,
+        "group": group_name,
+        "expires_at": invite["expires_at"],
+    }
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
@@ -35,7 +71,7 @@ async def create_invite(
     token = secrets.token_urlsafe(32)
     expires_at = (datetime.now(UTC) + timedelta(days=7)).isoformat()
 
-    result = sb.table("invites").insert({
+    sb.table("invites").insert({
         "referrer_id": user_id,
         "invite_token": token,
         "group_id": body.group_id,
@@ -43,8 +79,8 @@ async def create_invite(
         "expires_at": expires_at,
     }).execute()
 
-    invite = result.data[0]
-    invite_url = f"https://lfresco.github.io/beer_project/#/invite?token={token}"
+    frontend_base = settings.frontend_origin.rstrip("/")
+    invite_url = f"{frontend_base}/#/invite?token={token}"
     return {"invite_url": invite_url, "token": token, "expires_at": expires_at}
 
 
@@ -54,6 +90,9 @@ async def accept_invite(
     user_id: str = Depends(get_current_user_id),
 ):
     """Accept an invite: validate token, add user to group, mark token used."""
+    if len(body.token) < 16:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid invite token")
+
     sb = get_supabase()
 
     invite_result = sb.table("invites").select("*").eq("invite_token", body.token).single().execute()
