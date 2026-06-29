@@ -255,8 +255,9 @@ CREATE POLICY "members_read" ON group_members FOR SELECT
 -- Inserts handled by the service role (via FastAPI invites endpoint)
 
 -- ── Invites ───────────────────────────────────────────────────
+DROP POLICY IF EXISTS "invites_read" ON invites;
 CREATE POLICY "invites_read" ON invites FOR SELECT
-  USING (referrer_id = auth.uid() OR invite_token IS NOT NULL);
+  USING (referrer_id = auth.uid() OR used_by = auth.uid());
 
 -- ── Beer entries ──────────────────────────────────────────────
 CREATE POLICY "entries_read" ON beer_entries FOR SELECT

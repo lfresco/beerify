@@ -4,7 +4,7 @@ Loads beer styles and brands from Open Beer DB / public datasets.
 Protected admin endpoint — only the service-level admin key triggers ingestion.
 """
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, status, Header
+from fastapi import APIRouter, Depends, HTTPException, status, Header, Query
 
 from app.config import settings
 from app.supabase_client import get_supabase
@@ -16,8 +16,7 @@ OPENBEERDB_BEERS = "https://openbeerdb.com/files/openbeerdb_csv.zip"
 
 def _require_admin(x_admin_key: str | None = Header(default=None)) -> None:
     """Simple static admin key guard for internal endpoints."""
-    from app.config import settings as s
-    expected = getattr(s, "admin_secret", None)
+    expected = settings.admin_secret
     if not expected or x_admin_key != expected:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
@@ -31,7 +30,7 @@ async def list_styles():
 
 
 @router.get("/brands")
-async def list_brands(q: str = "", limit: int = 50):
+async def list_brands(q: str = "", limit: int = Query(default=50, ge=1, le=200)):
     """Public: search beer brands by name for autocomplete."""
     sb = get_supabase()
     query = sb.table("beer_brands").select("id, name, brewery, style_id, abv").limit(limit)
@@ -94,10 +93,6 @@ async def ingest_catalog():
 
         # Upsert styles
         sb.table("beer_styles").upsert(styles, on_conflict="name").execute()
-
-        # Fetch style id map
-        styles_result = sb.table("beer_styles").select("id, name").execute()
-        style_map = {s["name"]: s["id"] for s in (styles_result.data or [])}
 
         # Try to fetch Open Beer DB data
         brands_ingested = 0
