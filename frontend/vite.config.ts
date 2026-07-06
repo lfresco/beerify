@@ -6,7 +6,7 @@ import { resolve } from 'path'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  base: '/beer_project/',
+  base: '/beerify/',
   build: {
     outDir: '../docs',
     emptyOutDir: true,

@@ -19,7 +19,7 @@ Social beer-tracking app for friends. Log beers, post photos, react, and see sta
 3. Go to **Storage** and create a bucket called `beer-images` (private)
 4. Run the Storage RLS policies from the comments at the bottom of `schema.sql`
 5. Enable **Google** provider in **Authentication → Providers**
-6. Set the **Site URL** and **Redirect URLs** to your GitHub Pages URL: `https://<username>.github.io/beer_project`
+6. Set the **Site URL** and **Redirect URLs** to your GitHub Pages URL: `https://<username>.github.io/beerify`
 
 ### 2. Frontend (local dev)
 
