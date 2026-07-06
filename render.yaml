@@ -1,10 +1,9 @@
 services:
   - type: web
-    name: beerlog-api
+    name: beerify-api
     env: python
-    rootDir: backend
     buildCommand: pip install poetry && poetry install --no-interaction --no-root
-    startCommand: poetry run uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    startCommand: poetry run uvicorn app.main:app --host 0.0.0.0 --port $PORT --app-dir backend
     envVars:
       - key: SUPABASE_URL
         sync: false
@@ -18,3 +17,5 @@ services:
         value: https://lfresco.github.io/beerify,http://localhost:5173
       - key: ENVIRONMENT
         value: production
+      - key: PYTHON_VERSION
+        value: 3.13.1
