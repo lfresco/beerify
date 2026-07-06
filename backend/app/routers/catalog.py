@@ -121,8 +121,16 @@ async def ingest_catalog():
                         "abv": abv,
                     })
                 if brands:
-                    sb.table("beer_brands").upsert(brands, on_conflict="name").execute()
-                    brands_ingested = len(brands)
+                    seen = set()
+                    unique_brands = []
+                    for b in brands:
+                        key = b["name"].lower()
+                        if key in seen:
+                            continue
+                        seen.add(key)
+                        unique_brands.append(b)
+                    sb.table("beer_brands").upsert(unique_brands, on_conflict="name").execute()
+                    brands_ingested = len(unique_brands)
         except Exception as e:
             return {"status": "partial", "styles": len(styles), "brands": 0, "error": str(e)}
 
