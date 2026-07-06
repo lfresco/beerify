@@ -23,9 +23,50 @@ CREATE TABLE IF NOT EXISTS profiles (
 
 CREATE INDEX IF NOT EXISTS idx_profiles_username ON profiles(username);
 
--- Auto-create profile on sign-up
+-- ──────────────────────────────────────────────────────────────
+-- ACCESS ALLOWLIST (email-based signup guard)
+-- Only users whose email is listed here can create an auth account.
+-- Managed via service_role (admin). RLS is intentionally left off:
+-- Postgres role checks alone gate access.
+-- ──────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS allowed_emails (
+  email    TEXT PRIMARY KEY,
+  note     TEXT,
+  added_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE OR REPLACE FUNCTION public.enforce_email_allowlist()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+BEGIN
+  IF NEW.email IS NULL THEN
+    RAISE EXCEPTION 'Email is required'
+      USING ERRCODE = '22023';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.allowed_emails
+    WHERE lower(email) = lower(NEW.email)
+  ) THEN
+    RAISE EXCEPTION 'This email is not authorized. Ask the admin to add you.'
+      USING ERRCODE = '42501';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS enforce_email_allowlist_trigger ON auth.users;
+CREATE TRIGGER enforce_email_allowlist_trigger
+  BEFORE INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.enforce_email_allowlist();
+
+-- Auto-create profile + personal Friends group on sign-up
 CREATE OR REPLACE FUNCTION handle_new_user()
-RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER AS $$
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  new_group_id UUID;
 BEGIN
   INSERT INTO public.profiles (id, username, display_name)
   VALUES (
@@ -34,6 +75,17 @@ BEGIN
     COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1))
   )
   ON CONFLICT (id) DO NOTHING;
+
+  IF NOT EXISTS (SELECT 1 FROM public.friend_groups WHERE owner_id = NEW.id) THEN
+    INSERT INTO public.friend_groups (name, owner_id, description)
+    VALUES ('Friends', NEW.id, 'Your personal friends group')
+    RETURNING id INTO new_group_id;
+
+    INSERT INTO public.group_members (group_id, user_id, role)
+    VALUES (new_group_id, NEW.id, 'owner')
+    ON CONFLICT DO NOTHING;
+  END IF;
+
   RETURN NEW;
 END;
 $$;
@@ -224,8 +276,12 @@ RETURNS BOOLEAN LANGUAGE sql SECURITY DEFINER STABLE AS $$
 $$;
 
 -- ── Profiles ──────────────────────────────────────────────────
+-- Any authenticated user can read basic profile info (needed for
+-- friend search). Writes remain owner-only.
+DROP POLICY IF EXISTS "profiles_read" ON profiles;
 CREATE POLICY "profiles_read" ON profiles FOR SELECT
-  USING (id = auth.uid() OR same_group(id));
+  TO authenticated
+  USING (true);
 
 CREATE POLICY "profiles_insert" ON profiles FOR INSERT
   WITH CHECK (id = auth.uid());
@@ -252,7 +308,45 @@ CREATE POLICY "members_read" ON group_members FOR SELECT
   USING (user_id = auth.uid() OR
          EXISTS (SELECT 1 FROM group_members m WHERE m.group_id = group_id AND m.user_id = auth.uid()));
 
--- Inserts handled by the service role (via FastAPI invites endpoint)
+-- Group owner can add members
+DROP POLICY IF EXISTS "members_insert" ON group_members;
+CREATE POLICY "members_insert" ON group_members FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM friend_groups
+      WHERE id = group_members.group_id AND owner_id = auth.uid()
+    )
+  );
+
+-- Group owner can remove members; members can leave themselves
+DROP POLICY IF EXISTS "members_delete" ON group_members;
+CREATE POLICY "members_delete" ON group_members FOR DELETE
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM friend_groups
+      WHERE id = group_members.group_id AND owner_id = auth.uid()
+    )
+    OR user_id = auth.uid()
+  );
+
+-- Guard: owners cannot be removed from their own group
+CREATE OR REPLACE FUNCTION public.prevent_owner_removal()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+  IF OLD.role = 'owner' THEN
+    RAISE EXCEPTION 'Cannot remove the group owner'
+      USING ERRCODE = '42501';
+  END IF;
+  RETURN OLD;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS prevent_owner_removal_trigger ON group_members;
+CREATE TRIGGER prevent_owner_removal_trigger
+  BEFORE DELETE ON group_members
+  FOR EACH ROW EXECUTE FUNCTION public.prevent_owner_removal();
 
 -- ── Invites ───────────────────────────────────────────────────
 DROP POLICY IF EXISTS "invites_read" ON invites;
