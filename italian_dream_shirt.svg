@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 420" width="600" height="420">
+  <!-- Transparent background for print -->
+  <rect width="600" height="420" fill="white"/>
+
+  <!-- I'M THE - smaller, right-aligned to match shirt layout -->
+  <text
+    x="594"
+    y="98"
+    font-family="'Arial Black', 'Helvetica Neue', Impact, sans-serif"
+    font-weight="900"
+    font-size="88"
+    fill="#1a1a1a"
+    text-anchor="end"
+    letter-spacing="-1"
+  >I'M THE</text>
+
+  <!-- ITALIAN - large, full-width dominant line -->
+  <text
+    x="300"
+    y="240"
+    font-family="'Arial Black', 'Helvetica Neue', Impact, sans-serif"
+    font-weight="900"
+    font-size="160"
+    fill="#1a1a1a"
+    text-anchor="middle"
+    letter-spacing="-3"
+  >ITALIAN</text>
+
+  <!-- DREAM - large, centered -->
+  <text
+    x="300"
+    y="395"
+    font-family="'Arial Black', 'Helvetica Neue', Impact, sans-serif"
+    font-weight="900"
+    font-size="155"
+    fill="#1a1a1a"
+    text-anchor="middle"
+    letter-spacing="-3"
+  >DREAM</text>
+</svg>
