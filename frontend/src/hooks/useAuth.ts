@@ -7,14 +7,19 @@ export function useAuth() {
 
   useEffect(() => {
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setAuth(session.user, session)
-        fetchProfile(session.user.id)
-      } else {
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        if (session) {
+          setAuth(session.user, session)
+          fetchProfile(session.user.id)
+        } else {
+          setLoading(false)
+        }
+      })
+      .catch((e) => {
+        console.error('getSession failed:', e)
         setLoading(false)
-      }
-    })
+      })
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
@@ -31,9 +36,20 @@ export function useAuth() {
 
   async function fetchProfile(userId: string) {
     setLoading(true)
-    const { data } = await supabase.from('profiles').select('*').eq('id', userId).single()
-    setProfile(data)
-    setLoading(false)
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle()
+      if (error) console.error('fetchProfile error:', error)
+      setProfile(data ?? null)
+    } catch (e) {
+      console.error('fetchProfile threw:', e)
+      setProfile(null)
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function signInWithEmail(email: string, password: string) {
