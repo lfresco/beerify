@@ -266,12 +266,25 @@ ALTER TABLE comments      ENABLE ROW LEVEL SECURITY;
 
 -- Helper: is the current user in the same group as a given user?
 CREATE OR REPLACE FUNCTION same_group(other_user_id UUID)
-RETURNS BOOLEAN LANGUAGE sql SECURITY DEFINER STABLE AS $$
+RETURNS BOOLEAN LANGUAGE sql SECURITY DEFINER STABLE
+SET search_path = public, pg_temp
+AS $$
   SELECT EXISTS (
-    SELECT 1 FROM group_members gm1
-    JOIN group_members gm2 ON gm1.group_id = gm2.group_id
+    SELECT 1 FROM public.group_members gm1
+    JOIN public.group_members gm2 ON gm1.group_id = gm2.group_id
     WHERE gm1.user_id = auth.uid()
       AND gm2.user_id = other_user_id
+  );
+$$;
+
+-- Helper: is the current user a member of a specific group?
+CREATE OR REPLACE FUNCTION is_group_member(target_group_id UUID)
+RETURNS BOOLEAN LANGUAGE sql SECURITY DEFINER STABLE
+SET search_path = public, pg_temp
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.group_members
+    WHERE group_id = target_group_id AND user_id = auth.uid()
   );
 $$;
 
@@ -304,9 +317,14 @@ CREATE POLICY "groups_update" ON friend_groups FOR UPDATE
   USING (owner_id = auth.uid()) WITH CHECK (owner_id = auth.uid());
 
 -- ── Group members ─────────────────────────────────────────────
+-- Read: see your own memberships OR other members if you're in the same group
+-- (uses SECURITY DEFINER helper to avoid recursion)
 CREATE POLICY "members_read" ON group_members FOR SELECT
-  USING (user_id = auth.uid() OR
-         EXISTS (SELECT 1 FROM group_members m WHERE m.group_id = group_id AND m.user_id = auth.uid()));
+  TO authenticated
+  USING (
+    user_id = auth.uid()
+    OR is_group_member(group_id)
+  );
 
 -- Group owner can add members
 DROP POLICY IF EXISTS "members_insert" ON group_members;
