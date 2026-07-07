@@ -1,11 +1,19 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/store/auth'
 
+// Singleton flag: ensures auth initialization only happens once globally
+let authInitialized = false
+
 export function useAuth() {
   const { user, session, profile, loading, setAuth, setProfile, setLoading, reset } = useAuthStore()
+  const fetchingRef = useRef(false)
 
   useEffect(() => {
+    // Only the FIRST component that mounts with useAuth will initialize
+    if (authInitialized) return
+    authInitialized = true
+
     // Get initial session
     supabase.auth.getSession()
       .then(({ data: { session } }) => {
@@ -22,7 +30,7 @@ export function useAuth() {
       })
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
         setAuth(session.user, session)
         fetchProfile(session.user.id)
@@ -31,20 +39,23 @@ export function useAuth() {
       }
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      subscription.unsubscribe()
+      authInitialized = false
+    }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function fetchProfile(userId: string) {
-    console.log('[useAuth] fetchProfile called for userId:', userId)
+    // Prevent concurrent/duplicate fetches
+    if (fetchingRef.current) return
+    fetchingRef.current = true
     setLoading(true)
     try {
-      console.log('[useAuth] Fetching profile from Supabase...')
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .maybeSingle()
-      console.log('[useAuth] fetchProfile result:', { data, error })
       if (error) console.error('fetchProfile error:', error)
       setProfile(data ?? null)
     } catch (e) {
@@ -52,6 +63,7 @@ export function useAuth() {
       setProfile(null)
     } finally {
       setLoading(false)
+      fetchingRef.current = false
     }
   }
 
@@ -65,19 +77,9 @@ export function useAuth() {
     if (error) throw error
   }
 
-  async function signInWithGoogle() {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}${import.meta.env.BASE_URL}#/auth/callback`,
-      },
-    })
-    if (error) throw error
-  }
-
   async function signOut() {
     await supabase.auth.signOut()
   }
 
-  return { user, session, profile, loading, signInWithEmail, signUpWithEmail, signInWithGoogle, signOut }
+  return { user, session, profile, loading, signInWithEmail, signUpWithEmail, signOut }
 }
