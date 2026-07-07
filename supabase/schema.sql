@@ -372,8 +372,9 @@ CREATE POLICY "invites_read" ON invites FOR SELECT
   USING (referrer_id = auth.uid() OR used_by = auth.uid());
 
 -- ── Beer entries ──────────────────────────────────────────────
+-- All authenticated users can see all entries (closed group)
 CREATE POLICY "entries_read" ON beer_entries FOR SELECT
-  USING (user_id = auth.uid() OR same_group(user_id));
+  TO authenticated USING (true);
 
 CREATE POLICY "entries_insert" ON beer_entries FOR INSERT
   WITH CHECK (user_id = auth.uid());
@@ -386,7 +387,7 @@ CREATE POLICY "entries_delete" ON beer_entries FOR DELETE
 
 -- ── Photos ────────────────────────────────────────────────────
 CREATE POLICY "photos_read" ON photos FOR SELECT
-  USING (user_id = auth.uid() OR same_group(user_id));
+  TO authenticated USING (true);
 
 CREATE POLICY "photos_insert" ON photos FOR INSERT
   WITH CHECK (user_id = auth.uid() AND
@@ -397,7 +398,7 @@ CREATE POLICY "photos_delete" ON photos FOR DELETE
 
 -- ── Likes ────────────────────────────────────────────────────
 CREATE POLICY "likes_read" ON likes FOR SELECT
-  USING (user_id = auth.uid() OR same_group(user_id));
+  TO authenticated USING (true);
 
 CREATE POLICY "likes_insert" ON likes FOR INSERT
   WITH CHECK (user_id = auth.uid());
@@ -407,7 +408,7 @@ CREATE POLICY "likes_delete" ON likes FOR DELETE
 
 -- ── Comments ─────────────────────────────────────────────────
 CREATE POLICY "comments_read" ON comments FOR SELECT
-  USING (user_id = auth.uid() OR same_group(user_id));
+  TO authenticated USING (true);
 
 CREATE POLICY "comments_insert" ON comments FOR INSERT
   WITH CHECK (user_id = auth.uid());

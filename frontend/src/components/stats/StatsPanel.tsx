@@ -4,20 +4,13 @@ import {
 } from 'recharts'
 import { Card } from '@/components/ui/Card'
 import { useStats } from '@/hooks/useStats'
-import { useAuthStore } from '@/store/auth'
 
 const COLORS = ['#f59e0b', '#fb923c', '#a78bfa', '#34d399', '#60a5fa', '#f472b6']
 
-interface StatsPanelProps {
-  targetUserId?: string
-}
+export function StatsPanel() {
+  const { overall, leaderboard } = useStats()
 
-export function StatsPanel({ targetUserId }: StatsPanelProps) {
-  const { personal, leaderboard } = useStats(targetUserId)
-  const selfId = useAuthStore((s) => s.user?.id)
-  const isOwnStats = !targetUserId || targetUserId === selfId
-
-  if (personal.isLoading) {
+  if (overall.isLoading) {
     return (
       <div className="flex items-center justify-center h-40 text-slate-400">
         Loading stats…
@@ -25,17 +18,17 @@ export function StatsPanel({ targetUserId }: StatsPanelProps) {
     )
   }
 
-  const stats = personal.data
+  const stats = overall.data
 
   return (
     <div className="flex flex-col gap-6">
       {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Beers logged', value: stats?.totalBeers ?? 0, icon: '🍺' },
+          { label: 'Total beers', value: stats?.totalBeers ?? 0, icon: '🍺' },
           { label: 'Avg rating', value: stats ? (stats.avgRating.toFixed(1)) : '—', icon: '⭐' },
           { label: 'Styles tried', value: stats?.styleDistribution.length ?? 0, icon: '🎨' },
-          { label: 'This month', value: stats?.monthlyTrend.at(-1)?.count ?? 0, icon: '📅' },
+          { label: 'Members', value: stats?.uniqueUsers ?? 0, icon: '👥' },
         ].map((s) => (
           <Card key={s.label} className="p-4 flex flex-col gap-1">
             <span className="text-2xl">{s.icon}</span>
@@ -110,10 +103,10 @@ export function StatsPanel({ targetUserId }: StatsPanelProps) {
         )}
       </div>
 
-      {/* Leaderboard (only show on group/global stats) */}
-      {isOwnStats && leaderboard.data && leaderboard.data.length > 1 && (
+      {/* Leaderboard */}
+      {leaderboard.data && leaderboard.data.length > 0 && (
         <Card className="p-4">
-          <h3 className="text-sm font-semibold text-slate-300 mb-3">🏆 Group leaderboard</h3>
+          <h3 className="text-sm font-semibold text-slate-300 mb-3">🏆 Leaderboard</h3>
           <div className="flex flex-col gap-2">
             {leaderboard.data.map((u, i) => (
               <div key={u.id} className="flex items-center gap-3">

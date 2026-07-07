@@ -2,27 +2,27 @@ import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/store/auth'
 
-export function useStats(targetUserId?: string) {
+export function useStats() {
   const user = useAuthStore((s) => s.user)
-  const uid = targetUserId ?? user?.id
 
-  const personal = useQuery({
-    queryKey: ['stats', 'personal', uid],
-    enabled: !!uid,
+  const overall = useQuery({
+    queryKey: ['stats', 'overall'],
+    enabled: !!user,
     staleTime: 1000 * 60 * 5,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('beer_entries')
-        .select('rating, tasted_at, style_id, beer_styles(name)')
-        .eq('user_id', uid!)
+        .select('rating, tasted_at, style_id, user_id, beer_styles(name)')
       if (error) throw error
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const entries = (data ?? []) as unknown as Array<{ rating: number; tasted_at: string; style_id: number | null; beer_styles: { name: string } | { name: string }[] | null }>
+      const entries = (data ?? []) as any[]
       const totalBeers = entries.length
       const avgRating = totalBeers
         ? entries.reduce((s, e) => s + (e.rating ?? 0), 0) / totalBeers
         : 0
+
+      const uniqueUsers = new Set(entries.map((e) => e.user_id)).size
 
       // Monthly counts
       const byMonth: Record<string, number> = {}
@@ -37,7 +37,6 @@ export function useStats(targetUserId?: string) {
       // Style distribution
       const styleMap: Record<string, number> = {}
       entries.forEach((e) => {
-        // beer_styles can be an object or array depending on Supabase query
         const bs = e.beer_styles
         const name = bs ? (Array.isArray(bs) ? bs[0]?.name : bs.name) ?? 'Unknown' : 'Unknown'
         styleMap[name] = (styleMap[name] ?? 0) + 1
@@ -52,7 +51,7 @@ export function useStats(targetUserId?: string) {
         count: entries.filter((e) => e.rating === r).length,
       }))
 
-      return { totalBeers, avgRating, monthlyTrend, styleDistribution, ratingDist }
+      return { totalBeers, avgRating, uniqueUsers, monthlyTrend, styleDistribution, ratingDist }
     },
   })
 
@@ -89,5 +88,5 @@ export function useStats(targetUserId?: string) {
     },
   })
 
-  return { personal, leaderboard }
+  return { overall, leaderboard }
 }
