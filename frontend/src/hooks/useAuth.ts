@@ -35,13 +35,16 @@ export function useAuth() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function fetchProfile(userId: string) {
+    console.log('[useAuth] fetchProfile called for userId:', userId)
     setLoading(true)
     try {
+      console.log('[useAuth] Fetching profile from Supabase...')
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .maybeSingle()
+      console.log('[useAuth] fetchProfile result:', { data, error })
       if (error) console.error('fetchProfile error:', error)
       setProfile(data ?? null)
     } catch (e) {
