@@ -8,7 +8,14 @@ import StatsPage from '@/pages/StatsPage'
 import ProfilePage from '@/pages/ProfilePage'
 import InvitePage from '@/pages/InvitePage'
 
-const qc = new QueryClient()
+const qc = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+})
 
 function AppRoutes() {
   const { user, loading } = useAuth()
