@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { formatDistanceToNow } from 'date-fns'
+import { format, formatDistanceToNow } from 'date-fns'
 import { Card } from '@/components/ui/Card'
 import { StarRating } from '@/components/ui/StarRating'
 import { Button } from '@/components/ui/Button'
@@ -11,9 +11,11 @@ import type { FeedEntry } from '@/types/database'
 interface FeedCardProps {
   item: FeedEntry
   currentUserId: string
+  onEdit?: (entryId: string) => void
+  onDelete?: (entryId: string) => void
 }
 
-export function FeedCard({ item, currentUserId }: FeedCardProps) {
+export function FeedCard({ item, currentUserId, onEdit, onDelete }: FeedCardProps) {
   const { entry, profile, style, photos, likes, comments, userHasLiked } = item
   const [showComments, setShowComments] = useState(false)
   const [commentText, setCommentText] = useState('')
@@ -52,6 +54,8 @@ export function FeedCard({ item, currentUserId }: FeedCardProps) {
     )
   }
 
+  const isOwner = currentUserId === entry.user_id
+
   return (
     <Card className="overflow-hidden">
       {firstPhoto && photoUrl && (
@@ -71,7 +75,8 @@ export function FeedCard({ item, currentUserId }: FeedCardProps) {
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-semibold text-slate-100 truncate">{profile?.display_name ?? profile?.username}</p>
-            <p className="text-xs text-slate-400">{formatDistanceToNow(new Date(entry.tasted_at), { addSuffix: true })}</p>
+            <p className="text-xs text-slate-400">Posted {formatDistanceToNow(new Date(entry.created_at), { addSuffix: true })}</p>
+            <p className="text-xs text-slate-500">Tasted {format(new Date(entry.tasted_at), 'PPP p')}</p>
           </div>
         </div>
 
@@ -109,6 +114,23 @@ export function FeedCard({ item, currentUserId }: FeedCardProps) {
             <span>💬</span>
             <span>{comments.length}</span>
           </button>
+
+          {isOwner && (
+            <>
+              <button
+                onClick={() => onEdit?.(entry.id)}
+                className="text-sm text-slate-400 hover:text-amber-400 transition-colors"
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => onDelete?.(entry.id)}
+                className="text-sm text-slate-400 hover:text-red-400 transition-colors"
+              >
+                Delete
+              </button>
+            </>
+          )}
         </div>
 
         {/* Comments */}

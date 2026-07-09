@@ -2,6 +2,15 @@ import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/store/auth'
 
+interface PersonalStats {
+  totalBeers: number
+  avgRating: number
+  stylesTried: number
+  monthlyTrend: Array<{ month: string; count: number }>
+  groupsJoined: number
+  groupsOwned: number
+}
+
 export function useStats() {
   const user = useAuthStore((s) => s.user)
 
@@ -89,4 +98,62 @@ export function useStats() {
   })
 
   return { overall, leaderboard }
+}
+
+export function useMyStats() {
+  const user = useAuthStore((s) => s.user)
+
+  return useQuery({
+    queryKey: ['stats', 'me', user?.id],
+    enabled: !!user,
+    staleTime: 1000 * 60,
+    queryFn: async (): Promise<PersonalStats> => {
+      const [{ data: entries, error: entriesError }, { data: memberships, error: membershipsError }, { count: ownedCount, error: ownedError }] = await Promise.all([
+        supabase
+          .from('beer_entries')
+          .select('rating, style_id, created_at')
+          .eq('user_id', user!.id),
+        supabase
+          .from('group_members')
+          .select('group_id')
+          .eq('user_id', user!.id),
+        supabase
+          .from('friend_groups')
+          .select('*', { count: 'exact', head: true })
+          .eq('owner_id', user!.id),
+      ])
+
+      if (entriesError) throw entriesError
+      if (membershipsError) throw membershipsError
+      if (ownedError) throw ownedError
+
+      const safeEntries = entries ?? []
+      const totalBeers = safeEntries.length
+      const avgRating = totalBeers
+        ? safeEntries.reduce((sum, entry) => sum + (entry.rating ?? 0), 0) / totalBeers
+        : 0
+      const stylesTried = new Set(safeEntries.map((entry) => entry.style_id).filter(Boolean)).size
+
+      const byMonth: Record<string, number> = {}
+      safeEntries.forEach((entry) => {
+        const month = entry.created_at.slice(0, 7)
+        byMonth[month] = (byMonth[month] ?? 0) + 1
+      })
+
+      const monthlyTrend = Object.entries(byMonth)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([month, count]) => ({ month, count }))
+
+      const groupsJoined = new Set((memberships ?? []).map((membership) => membership.group_id)).size
+
+      return {
+        totalBeers,
+        avgRating,
+        stylesTried,
+        monthlyTrend,
+        groupsJoined,
+        groupsOwned: ownedCount ?? 0,
+      }
+    },
+  })
 }

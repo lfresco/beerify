@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -6,11 +6,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { uploadPhoto } from '@/lib/storage'
 import { useAuthStore } from '@/store/auth'
+import { useUpdateEntry } from '@/hooks/useFeed'
 import { Button } from '@/components/ui/Button'
 import { Input, Textarea } from '@/components/ui/Input'
 import { StarRating } from '@/components/ui/StarRating'
 import { PhotoDropzone } from '@/components/beer/PhotoDropzone'
-import type { BeerStyle, BeerBrand } from '@/types/database'
+import type { BeerStyle, BeerBrand, FeedEntry } from '@/types/database'
 
 const schema = z.object({
   name: z.string().min(1, 'Beer name is required'),
@@ -26,12 +27,28 @@ type FormData = z.infer<typeof schema>
 
 interface BeerEntryFormProps {
   onSuccess?: () => void
+  onCancel?: () => void
+  editingEntry?: FeedEntry['entry'] | null
 }
 
-export function BeerEntryForm({ onSuccess }: BeerEntryFormProps) {
+function toDateTimeLocalValue(isoString: string) {
+  const date = new Date(isoString)
+  const tzOffsetMs = date.getTimezoneOffset() * 60_000
+  return new Date(date.getTime() - tzOffsetMs).toISOString().slice(0, 16)
+}
+
+function nowDateTimeLocalValue() {
+  const now = new Date()
+  const tzOffsetMs = now.getTimezoneOffset() * 60_000
+  return new Date(now.getTime() - tzOffsetMs).toISOString().slice(0, 16)
+}
+
+export function BeerEntryForm({ onSuccess, onCancel, editingEntry }: BeerEntryFormProps) {
   const user = useAuthStore((s) => s.user)
   const qc = useQueryClient()
   const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const updateEntry = useUpdateEntry()
+  const isEditing = !!editingEntry
 
   const { data: styles } = useQuery<BeerStyle[]>({
     queryKey: ['beerStyles'],
@@ -66,30 +83,64 @@ export function BeerEntryForm({ onSuccess }: BeerEntryFormProps) {
     resolver: zodResolver(schema),
     defaultValues: {
       rating: 3,
-      tasted_at: new Date().toISOString().slice(0, 10),
+      tasted_at: nowDateTimeLocalValue(),
     },
   })
 
+  useEffect(() => {
+    if (editingEntry) {
+      reset({
+        name: editingEntry.name,
+        brewery: editingEntry.brewery ?? '',
+        style_id: editingEntry.style_id ?? undefined,
+        abv: editingEntry.abv ?? undefined,
+        rating: editingEntry.rating,
+        notes: editingEntry.notes ?? '',
+        tasted_at: toDateTimeLocalValue(editingEntry.tasted_at),
+      })
+      return
+    }
+
+    reset({
+      name: '',
+      brewery: '',
+      style_id: undefined,
+      abv: undefined,
+      rating: 3,
+      notes: '',
+      tasted_at: nowDateTimeLocalValue(),
+    })
+  }, [editingEntry, reset])
+
   const mutation = useMutation({
     mutationFn: async (values: FormData) => {
+      const payload = {
+        name: values.name,
+        brewery: values.brewery ?? null,
+        style_id: values.style_id ?? null,
+        abv: values.abv ?? null,
+        rating: values.rating,
+        notes: values.notes ?? null,
+        tasted_at: new Date(values.tasted_at).toISOString(),
+      }
+
+      if (editingEntry) {
+        await updateEntry.mutateAsync({ id: editingEntry.id, values: payload })
+        return { id: editingEntry.id }
+      }
+
       const { data: entry, error } = await supabase
         .from('beer_entries')
         .insert({
           user_id: user!.id,
-          name: values.name,
-          brewery: values.brewery ?? null,
-          style_id: values.style_id ?? null,
-          abv: values.abv ?? null,
-          rating: values.rating,
-          notes: values.notes ?? null,
-          tasted_at: new Date(values.tasted_at).toISOString(),
+          ...payload,
         })
         .select('id')
         .single()
 
       if (error) throw error
 
-      if (photoFile && entry) {
+      if (photoFile && entry && !editingEntry) {
         const storagePath = await uploadPhoto(photoFile, user!.id, entry.id)
         await supabase.from('photos').insert({
           beer_entry_id: entry.id,
@@ -102,7 +153,17 @@ export function BeerEntryForm({ onSuccess }: BeerEntryFormProps) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['feed'] })
-      reset()
+      if (!editingEntry) {
+        reset({
+          name: '',
+          brewery: '',
+          style_id: undefined,
+          abv: undefined,
+          rating: 3,
+          notes: '',
+          tasted_at: nowDateTimeLocalValue(),
+        })
+      }
       setPhotoFile(null)
       onSuccess?.()
     },
@@ -180,7 +241,7 @@ export function BeerEntryForm({ onSuccess }: BeerEntryFormProps) {
 
       <Input
         label="Date tasted *"
-        type="date"
+        type="datetime-local"
         {...register('tasted_at')}
         error={errors.tasted_at?.message}
       />
@@ -194,9 +255,16 @@ export function BeerEntryForm({ onSuccess }: BeerEntryFormProps) {
         <p className="text-sm text-red-400">{(mutation.error as Error).message}</p>
       )}
 
-      <Button type="submit" loading={mutation.isPending} size="lg">
-        🍺 Log this beer
-      </Button>
+      <div className="flex gap-2">
+        <Button type="submit" loading={mutation.isPending || updateEntry.isPending} size="lg" className="flex-1">
+          {isEditing ? 'Save changes' : '🍺 Log this beer'}
+        </Button>
+        {isEditing && (
+          <Button type="button" variant="ghost" size="lg" onClick={onCancel}>
+            Cancel
+          </Button>
+        )}
+      </div>
     </form>
   )
 }
