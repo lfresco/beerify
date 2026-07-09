@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useFeed, useDeleteEntry } from '@/hooks/useFeed'
 import { useAuthStore } from '@/store/auth'
 import { FeedCard } from '@/components/feed/FeedCard'
@@ -11,6 +11,7 @@ export default function FeedPage() {
   const deleteEntry = useDeleteEntry()
   const [showForm, setShowForm] = useState(false)
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null)
+  const dialogRef = useRef<HTMLDialogElement>(null)
 
   const editingEntry = data?.find((item) => item.entry.id === editingEntryId)?.entry ?? null
 
@@ -21,8 +22,23 @@ export default function FeedPage() {
 
   function openEditForm(entryId: string) {
     setEditingEntryId(entryId)
-    setShowForm(true)
+    dialogRef.current?.showModal()
   }
+
+  function closeEditModal() {
+    dialogRef.current?.close()
+    setEditingEntryId(null)
+  }
+
+  useEffect(() => {
+    const dialog = dialogRef.current
+    if (!dialog) return
+    function handleClose() {
+      setEditingEntryId(null)
+    }
+    dialog.addEventListener('close', handleClose)
+    return () => dialog.removeEventListener('close', handleClose)
+  }, [])
 
   async function handleDelete(entryId: string) {
     const shouldDelete = window.confirm('Delete this post? This cannot be undone.')
@@ -31,12 +47,11 @@ export default function FeedPage() {
   }
 
   function handleFormSuccess() {
-    setEditingEntryId(null)
     setShowForm(false)
+    closeEditModal()
   }
 
-  function handleFormCancel() {
-    setEditingEntryId(null)
+  function handleCreateCancel() {
     setShowForm(false)
   }
 
@@ -51,13 +66,10 @@ export default function FeedPage() {
 
       {showForm && (
         <div className="bg-slate-800 border border-slate-700 rounded-2xl p-5">
-          <h2 className="font-semibold text-slate-200 mb-4">
-            {editingEntry ? 'Edit your post' : 'What are you drinking?'}
-          </h2>
+          <h2 className="font-semibold text-slate-200 mb-4">What are you drinking?</h2>
           <BeerEntryForm
-            editingEntry={editingEntry}
             onSuccess={handleFormSuccess}
-            onCancel={handleFormCancel}
+            onCancel={handleCreateCancel}
           />
         </div>
       )}
@@ -93,6 +105,34 @@ export default function FeedPage() {
           }}
         />
       ))}
+
+      {/* Edit modal overlay */}
+      <dialog
+        ref={dialogRef}
+        onClick={(e) => {
+          if (e.target === dialogRef.current) closeEditModal()
+        }}
+        className="backdrop:bg-black/60 backdrop:backdrop-blur-sm bg-transparent p-0 m-auto max-w-lg w-[calc(100%-2rem)] open:flex open:items-center open:justify-center"
+      >
+        <div className="bg-slate-800 border border-slate-700 rounded-2xl p-5 w-full max-h-[85vh] overflow-y-auto">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-slate-200">Edit your post</h2>
+            <button
+              onClick={closeEditModal}
+              className="text-slate-400 hover:text-slate-200 text-xl leading-none"
+            >
+              ✕
+            </button>
+          </div>
+          {editingEntry && (
+            <BeerEntryForm
+              editingEntry={editingEntry}
+              onSuccess={handleFormSuccess}
+              onCancel={closeEditModal}
+            />
+          )}
+        </div>
+      </dialog>
     </div>
   )
 }

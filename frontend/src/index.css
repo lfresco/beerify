@@ -4,4 +4,15 @@
   body {
     @apply bg-slate-900 text-slate-100 antialiased;
   }
+
+  dialog {
+    border: none;
+    outline: none;
+    color: inherit;
+  }
+
+  dialog::backdrop {
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+  }
 }
