@@ -23,7 +23,7 @@ export function useFeed() {
           likes(*),
           comments(*)
         `)
-        .order('tasted_at', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(50)
 
       if (error) throw error
@@ -52,6 +52,52 @@ export function useFeed() {
         userHasLiked: (row.likes ?? []).some((l: any) => l.user_id === user?.id),
       }))
     },
+  })
+}
+
+export function useUpdateEntry() {
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      values,
+    }: {
+      id: string
+      values: {
+        name: string
+        brewery: string | null
+        style_id: number | null
+        abv: number | null
+        rating: number
+        notes: string | null
+        tasted_at: string
+      }
+    }) => {
+      const { error } = await supabase
+        .from('beer_entries')
+        .update(values)
+        .eq('id', id)
+
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['feed'] }),
+  })
+}
+
+export function useDeleteEntry() {
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (entryId: string) => {
+      const { error } = await supabase
+        .from('beer_entries')
+        .delete()
+        .eq('id', entryId)
+
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['feed'] }),
   })
 }
 
