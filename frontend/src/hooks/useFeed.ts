@@ -9,22 +9,24 @@ export function useFeed() {
   return useQuery({
     queryKey: ['feed', user?.id],
     enabled: !!user,
-    staleTime: 1000 * 30,
+    staleTime: 1000 * 60 * 2,  // 2 minutes - reduce refetches
+    gcTime: 1000 * 60 * 10,    // keep in cache 10 min
     queryFn: async (): Promise<FeedEntry[]> => {
       // Fetch entries visible to me (RLS handles group filtering)
+      // Select only needed fields to reduce egress
       const { data: entries, error } = await supabase
         .from('beer_entries')
         .select(`
-          *,
-          profiles(*),
-          beer_styles(*),
-          beer_brands(*),
-          photos(*),
-          likes(*),
-          comments(*)
+          id, user_id, beer_brand_id, name, brewery, style_id, abv, rating, notes, tasted_at, created_at,
+          profiles(id, username, avatar_url),
+          beer_styles(id, name),
+          beer_brands(id, name),
+          photos(id, storage_path),
+          likes(user_id),
+          comments(id, user_id, content, created_at)
         `)
         .order('created_at', { ascending: false })
-        .limit(50)
+        .limit(30)
 
       if (error) throw error
 
