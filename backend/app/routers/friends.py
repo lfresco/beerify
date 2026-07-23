@@ -19,6 +19,7 @@ def _ensure_personal_group(user_id: str) -> str:
         sb.table("friend_groups")
         .select("id")
         .eq("owner_id", user_id)
+        .eq("name", "Friends")
         .order("created_at", desc=False)
         .limit(1)
         .execute()

@@ -81,6 +81,7 @@ export interface Database {
           name: string
           owner_id: string
           description: string | null
+          group_image_url: string | null
           invite_code: string
           created_at: string
         }

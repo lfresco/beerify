@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { apiRequest } from '@/lib/api'
 import { useAuthStore } from '@/store/auth'
-import type { Profile } from '@/types/database'
+import type { Database, Profile } from '@/types/database'
 
 export interface FriendRow {
   membership_id: string
@@ -31,36 +31,44 @@ interface FriendRequestsResponse {
   }>
 }
 
+export interface OwnedGroup {
+  id: string
+  name: string
+  description: string | null
+  group_image_url: string | null
+  created_at: string
+}
+
 /**
- * Manages the current user's personal "Friends" group:
- *   - Loads the group id
+ * Manages the current user's friends network:
+ *   - Loads owned groups and resolves the personal "Friends" group
  *   - Lists members (with profile data) excluding self
  *   - Searches other users by username or display name
- *   - Adds / removes members
+ *   - Handles friend requests
+ *   - Creates and updates groups
  */
 export function useFriends() {
   const user = useAuthStore((s) => s.user)
   const session = useAuthStore((s) => s.session)
   const qc = useQueryClient()
 
-  const group = useQuery({
-    queryKey: ['friends', 'group', user?.id],
+  const groups = useQuery({
+    queryKey: ['friends', 'groups', user?.id],
     enabled: !!user,
     staleTime: 1000 * 60 * 5,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('friend_groups')
-        .select('id, name')
+        .select('id, name, description, group_image_url, created_at')
         .eq('owner_id', user!.id)
         .order('created_at', { ascending: true })
-        .limit(1)
-        .maybeSingle()
       if (error) throw error
-      return data as { id: string; name: string } | null
+      return (data ?? []) as OwnedGroup[]
     },
   })
 
-  const groupId = group.data?.id
+  const personalGroup = groups.data?.find((g) => g.name === 'Friends') ?? groups.data?.[0] ?? null
+  const groupId = personalGroup?.id
 
   const friends = useQuery({
     queryKey: ['friends', 'members', groupId],
@@ -144,8 +152,53 @@ export function useFriends() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['friends', 'members'] }),
   })
 
+  const createGroup = useMutation({
+    mutationFn: async (payload: { name: string; description?: string; group_image_url?: string }) => {
+      const cleanName = payload.name.trim()
+      if (!cleanName) throw new Error('Group name is required')
+
+      const insertData: Database['public']['Tables']['friend_groups']['Insert'] = {
+        name: cleanName,
+        owner_id: user!.id,
+        description: payload.description?.trim() || null,
+        group_image_url: payload.group_image_url?.trim() || null,
+        invite_code: crypto.randomUUID().replace(/-/g, '').slice(0, 24),
+      }
+
+      const { error } = await supabase.from('friend_groups').insert(insertData)
+      if (error) throw new Error(error.message)
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['friends', 'groups'] }),
+  })
+
+  const updateGroup = useMutation({
+    mutationFn: async (payload: {
+      id: string
+      name: string
+      description?: string
+      group_image_url?: string
+    }) => {
+      const cleanName = payload.name.trim()
+      if (!cleanName) throw new Error('Group name is required')
+
+      const { error } = await supabase
+        .from('friend_groups')
+        .update({
+          name: cleanName,
+          description: payload.description?.trim() || null,
+          group_image_url: payload.group_image_url?.trim() || null,
+        })
+        .eq('id', payload.id)
+        .eq('owner_id', user!.id)
+
+      if (error) throw new Error(error.message)
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['friends', 'groups'] }),
+  })
+
   return {
-    group,
+    group: personalGroup,
+    groups,
     friends,
     requests,
     sendRequest,
@@ -153,6 +206,8 @@ export function useFriends() {
     declineRequest,
     cancelRequest,
     removeFriend,
+    createGroup,
+    updateGroup,
   }
 }
 

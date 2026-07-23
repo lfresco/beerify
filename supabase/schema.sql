@@ -76,7 +76,7 @@ BEGIN
   )
   ON CONFLICT (id) DO NOTHING;
 
-  IF NOT EXISTS (SELECT 1 FROM public.friend_groups WHERE owner_id = NEW.id) THEN
+  IF NOT EXISTS (SELECT 1 FROM public.friend_groups WHERE owner_id = NEW.id AND name = 'Friends') THEN
     INSERT INTO public.friend_groups (name, owner_id, description)
     VALUES ('Friends', NEW.id, 'Your personal friends group')
     RETURNING id INTO new_group_id;
@@ -141,9 +141,13 @@ CREATE TABLE IF NOT EXISTS friend_groups (
   name        TEXT        NOT NULL,
   owner_id    UUID        NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   description TEXT,
+  group_image_url TEXT,
   invite_code TEXT        UNIQUE NOT NULL DEFAULT encode(gen_random_bytes(12), 'hex'),
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+ALTER TABLE friend_groups
+  ADD COLUMN IF NOT EXISTS group_image_url TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_friend_groups_owner ON friend_groups(owner_id);
 
