@@ -98,6 +98,18 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['group_members']['Row'], 'id' | 'joined_at'>
         Update: Partial<Database['public']['Tables']['group_members']['Insert']>
       }
+      friend_requests: {
+        Row: {
+          id: string
+          requester_id: string
+          recipient_id: string
+          status: 'pending' | 'accepted' | 'rejected'
+          created_at: string
+          responded_at: string | null
+        }
+        Insert: Omit<Database['public']['Tables']['friend_requests']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['friend_requests']['Insert']>
+      }
       invites: {
         Row: {
           id: string
@@ -150,6 +162,7 @@ export type BeerEntry = Database['public']['Tables']['beer_entries']['Row']
 export type Photo = Database['public']['Tables']['photos']['Row']
 export type FriendGroup = Database['public']['Tables']['friend_groups']['Row']
 export type GroupMember = Database['public']['Tables']['group_members']['Row']
+export type FriendRequest = Database['public']['Tables']['friend_requests']['Row']
 export type Invite = Database['public']['Tables']['invites']['Row']
 export type Like = Database['public']['Tables']['likes']['Row']
 export type Comment = Database['public']['Tables']['comments']['Row']

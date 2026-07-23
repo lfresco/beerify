@@ -6,7 +6,16 @@ import { useFriends, useUserSearch } from '@/hooks/useFriends'
 import type { Profile } from '@/types/database'
 
 export function FriendsPanel() {
-  const { friends, addFriend, removeFriend, group } = useFriends()
+  const {
+    friends,
+    removeFriend,
+    group,
+    requests,
+    sendRequest,
+    acceptRequest,
+    declineRequest,
+    cancelRequest,
+  } = useFriends()
   const [q, setQ] = useState('')
   const search = useUserSearch(q)
 
@@ -15,13 +24,104 @@ export function FriendsPanel() {
     [friends.data],
   )
 
+  const incomingPending = useMemo(
+    () => (requests.data?.incoming ?? []).filter((r) => r.status === 'pending'),
+    [requests.data],
+  )
+
+  const outgoingPending = useMemo(
+    () => (requests.data?.outgoing ?? []).filter((r) => r.status === 'pending'),
+    [requests.data],
+  )
+
+  const incomingRequesterIds = useMemo(
+    () => new Set(incomingPending.map((r) => r.requester_id)),
+    [incomingPending],
+  )
+
+  const outgoingRecipientIds = useMemo(
+    () => new Set(outgoingPending.map((r) => r.recipient_id)),
+    [outgoingPending],
+  )
+
   return (
     <Card className="p-5 flex flex-col gap-4">
       <div>
         <h3 className="text-lg font-bold text-slate-100">Friends</h3>
         <p className="text-sm text-slate-400">
-          People in your Friends group can see your beers, and you can see theirs.
+          Send requests, accept incoming ones, and manage who is in your Friends group.
         </p>
+      </div>
+
+      {/* Incoming requests */}
+      <div className="flex flex-col gap-2">
+        <h4 className="text-sm font-semibold text-slate-300">
+          Incoming requests ({incomingPending.length})
+        </h4>
+        {requests.isLoading ? (
+          <p className="text-sm text-slate-400">Loading requests...</p>
+        ) : incomingPending.length === 0 ? (
+          <p className="text-sm text-slate-400">No incoming requests.</p>
+        ) : (
+          <div className="flex flex-col gap-1">
+            {incomingPending.map((r) => (
+              <UserRow
+                key={r.id}
+                profile={r.profiles}
+                right={(
+                  <div className="flex gap-1">
+                    <Button
+                      size="sm"
+                      loading={acceptRequest.isPending}
+                      onClick={() => acceptRequest.mutate(r.id)}
+                    >
+                      Accept
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      loading={declineRequest.isPending}
+                      onClick={() => declineRequest.mutate(r.id)}
+                    >
+                      Decline
+                    </Button>
+                  </div>
+                )}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Outgoing requests */}
+      <div className="flex flex-col gap-2">
+        <h4 className="text-sm font-semibold text-slate-300">
+          Sent requests ({outgoingPending.length})
+        </h4>
+        {requests.isLoading ? (
+          <p className="text-sm text-slate-400">Loading requests...</p>
+        ) : outgoingPending.length === 0 ? (
+          <p className="text-sm text-slate-400">No pending sent requests.</p>
+        ) : (
+          <div className="flex flex-col gap-1">
+            {outgoingPending.map((r) => (
+              <UserRow
+                key={r.id}
+                profile={r.profiles}
+                right={(
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    loading={cancelRequest.isPending}
+                    onClick={() => cancelRequest.mutate(r.id)}
+                  >
+                    Cancel
+                  </Button>
+                )}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Search */}
@@ -47,17 +147,21 @@ export function FriendsPanel() {
                 right={
                   friendIds.has(p.id) ? (
                     <span className="text-xs text-slate-500">Added</span>
+                  ) : incomingRequesterIds.has(p.id) ? (
+                    <span className="text-xs text-slate-500">Requested you</span>
+                  ) : outgoingRecipientIds.has(p.id) ? (
+                    <span className="text-xs text-slate-500">Pending</span>
                   ) : (
                     <Button
                       size="sm"
-                      loading={addFriend.isPending}
+                      loading={sendRequest.isPending}
                       onClick={() =>
-                        addFriend.mutate(p.id, {
+                        sendRequest.mutate(p.id, {
                           onSuccess: () => setQ(''),
                         })
                       }
                     >
-                      Add
+                      Request
                     </Button>
                   )
                 }
@@ -65,10 +169,19 @@ export function FriendsPanel() {
             ))}
           </div>
         )}
-        {addFriend.error && (
+        {sendRequest.error && (
           <p className="text-xs text-red-400">
-            {(addFriend.error as Error).message}
+            {(sendRequest.error as Error).message}
           </p>
+        )}
+        {acceptRequest.error && (
+          <p className="text-xs text-red-400">{(acceptRequest.error as Error).message}</p>
+        )}
+        {declineRequest.error && (
+          <p className="text-xs text-red-400">{(declineRequest.error as Error).message}</p>
+        )}
+        {cancelRequest.error && (
+          <p className="text-xs text-red-400">{(cancelRequest.error as Error).message}</p>
         )}
       </div>
 

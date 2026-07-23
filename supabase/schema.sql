@@ -160,6 +160,23 @@ CREATE INDEX IF NOT EXISTS idx_group_members_user  ON group_members(user_id);
 CREATE INDEX IF NOT EXISTS idx_group_members_group ON group_members(group_id);
 
 -- ──────────────────────────────────────────────────────────────
+-- FRIEND REQUESTS
+-- ──────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS friend_requests (
+  id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  requester_id  UUID        NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  recipient_id  UUID        NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  status        TEXT        NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'rejected')),
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  responded_at  TIMESTAMPTZ,
+  UNIQUE (requester_id, recipient_id),
+  CHECK (requester_id <> recipient_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_friend_requests_requester ON friend_requests(requester_id);
+CREATE INDEX IF NOT EXISTS idx_friend_requests_recipient ON friend_requests(recipient_id);
+
+-- ──────────────────────────────────────────────────────────────
 -- INVITES
 -- ──────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS invites (
@@ -258,6 +275,7 @@ ALTER TABLE beer_styles   ENABLE ROW LEVEL SECURITY;
 ALTER TABLE beer_brands   ENABLE ROW LEVEL SECURITY;
 ALTER TABLE friend_groups ENABLE ROW LEVEL SECURITY;
 ALTER TABLE group_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE friend_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE invites       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE beer_entries  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE photos        ENABLE ROW LEVEL SECURITY;
@@ -365,6 +383,34 @@ DROP TRIGGER IF EXISTS prevent_owner_removal_trigger ON group_members;
 CREATE TRIGGER prevent_owner_removal_trigger
   BEFORE DELETE ON group_members
   FOR EACH ROW EXECUTE FUNCTION public.prevent_owner_removal();
+
+-- ── Friend requests ──────────────────────────────────────────
+DROP POLICY IF EXISTS "friend_requests_read" ON friend_requests;
+CREATE POLICY "friend_requests_read" ON friend_requests FOR SELECT
+  TO authenticated
+  USING (requester_id = auth.uid() OR recipient_id = auth.uid());
+
+DROP POLICY IF EXISTS "friend_requests_insert" ON friend_requests;
+CREATE POLICY "friend_requests_insert" ON friend_requests FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    requester_id = auth.uid()
+    AND requester_id <> recipient_id
+  );
+
+DROP POLICY IF EXISTS "friend_requests_update" ON friend_requests;
+CREATE POLICY "friend_requests_update" ON friend_requests FOR UPDATE
+  TO authenticated
+  USING (recipient_id = auth.uid())
+  WITH CHECK (recipient_id = auth.uid() AND status IN ('accepted', 'rejected'));
+
+DROP POLICY IF EXISTS "friend_requests_delete" ON friend_requests;
+CREATE POLICY "friend_requests_delete" ON friend_requests FOR DELETE
+  TO authenticated
+  USING (
+    (requester_id = auth.uid() AND status = 'pending')
+    OR (recipient_id = auth.uid() AND status IN ('pending', 'rejected'))
+  );
 
 -- ── Invites ───────────────────────────────────────────────────
 DROP POLICY IF EXISTS "invites_read" ON invites;

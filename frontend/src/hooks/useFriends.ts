@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import { apiRequest } from '@/lib/api'
 import { useAuthStore } from '@/store/auth'
 import type { Profile } from '@/types/database'
 
@@ -7,6 +8,27 @@ export interface FriendRow {
   membership_id: string
   role: 'owner' | 'member'
   profile: Profile
+}
+
+interface FriendRequestsResponse {
+  incoming: Array<{
+    id: string
+    requester_id: string
+    recipient_id: string
+    status: 'pending' | 'accepted' | 'rejected'
+    created_at: string
+    responded_at: string | null
+    profiles: Profile
+  }>
+  outgoing: Array<{
+    id: string
+    requester_id: string
+    recipient_id: string
+    status: 'pending' | 'accepted' | 'rejected'
+    created_at: string
+    responded_at: string | null
+    profiles: Profile
+  }>
 }
 
 /**
@@ -18,6 +40,7 @@ export interface FriendRow {
  */
 export function useFriends() {
   const user = useAuthStore((s) => s.user)
+  const session = useAuthStore((s) => s.session)
   const qc = useQueryClient()
 
   const group = useQuery({
@@ -58,21 +81,56 @@ export function useFriends() {
     },
   })
 
-  const addFriend = useMutation({
-    mutationFn: async (profileId: string) => {
-      if (!groupId) throw new Error('No Friends group found')
-      if (profileId === user!.id) throw new Error("You can't add yourself")
-      const { error } = await supabase.from('group_members').insert({
-        group_id: groupId,
-        user_id: profileId,
-        role: 'member',
-      })
-      if (error) {
-        if (error.code === '23505') throw new Error('Already in your friends list')
-        throw new Error(error.message)
-      }
+  const requests = useQuery({
+    queryKey: ['friends', 'requests', user?.id],
+    enabled: !!user && !!session,
+    staleTime: 1000 * 30,
+    queryFn: async () => {
+      return apiRequest<FriendRequestsResponse>('/friends/requests', {}, session!.access_token)
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['friends', 'members'] }),
+  })
+
+  const sendRequest = useMutation({
+    mutationFn: async (profileId: string) => {
+      if (profileId === user!.id) throw new Error("You can't add yourself")
+      await apiRequest('/friends/requests', {
+        method: 'POST',
+        body: JSON.stringify({ recipient_id: profileId }),
+      }, session!.access_token)
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['friends', 'requests'] })
+    },
+  })
+
+  const acceptRequest = useMutation({
+    mutationFn: async (requestId: string) => {
+      await apiRequest(`/friends/requests/${requestId}/accept`, {
+        method: 'POST',
+      }, session!.access_token)
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['friends', 'requests'] })
+      qc.invalidateQueries({ queryKey: ['friends', 'members'] })
+    },
+  })
+
+  const declineRequest = useMutation({
+    mutationFn: async (requestId: string) => {
+      await apiRequest(`/friends/requests/${requestId}/decline`, {
+        method: 'POST',
+      }, session!.access_token)
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['friends', 'requests'] }),
+  })
+
+  const cancelRequest = useMutation({
+    mutationFn: async (requestId: string) => {
+      await apiRequest(`/friends/requests/${requestId}`, {
+        method: 'DELETE',
+      }, session!.access_token)
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['friends', 'requests'] }),
   })
 
   const removeFriend = useMutation({
@@ -86,7 +144,16 @@ export function useFriends() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['friends', 'members'] }),
   })
 
-  return { group, friends, addFriend, removeFriend }
+  return {
+    group,
+    friends,
+    requests,
+    sendRequest,
+    acceptRequest,
+    declineRequest,
+    cancelRequest,
+    removeFriend,
+  }
 }
 
 export function useUserSearch(query: string) {
