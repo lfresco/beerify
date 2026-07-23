@@ -7,6 +7,7 @@ import FeedPage from '@/pages/FeedPage'
 import StatsPage from '@/pages/StatsPage'
 import ProfilePage from '@/pages/ProfilePage'
 import InvitePage from '@/pages/InvitePage'
+import PublicProfilePage from '@/pages/PublicProfilePage'
 
 const qc = new QueryClient({
   defaultOptions: {
@@ -45,6 +46,7 @@ function AppRoutes() {
           <Route path="/" element={<FeedPage />} />
           <Route path="/stats" element={<StatsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/people/:username" element={<PublicProfilePage />} />
           <Route path="/invite" element={<InvitePage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

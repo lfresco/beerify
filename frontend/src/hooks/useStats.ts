@@ -11,17 +11,54 @@ interface PersonalStats {
   groupsOwned: number
 }
 
-export function useStats() {
+export interface StatsFilters {
+  period: 'all' | '30d' | '90d' | 'year' | 'custom'
+  startDate?: string
+  endDate?: string
+}
+
+function getRangeForFilters(filters?: StatsFilters): { start?: string; end?: string } {
+  if (!filters || filters.period === 'all') return {}
+
+  const end = filters.endDate ? new Date(filters.endDate) : new Date()
+  const start = new Date(end)
+
+  if (filters.period === 'custom') {
+    return {
+      start: filters.startDate,
+      end: filters.endDate,
+    }
+  }
+
+  if (filters.period === '30d') start.setDate(end.getDate() - 30)
+  if (filters.period === '90d') start.setDate(end.getDate() - 90)
+  if (filters.period === 'year') start.setFullYear(end.getFullYear() - 1)
+
+  return {
+    start: start.toISOString(),
+    end: end.toISOString(),
+  }
+}
+
+export function useStats(filters?: StatsFilters) {
   const user = useAuthStore((s) => s.user)
 
+  const range = getRangeForFilters(filters)
+
   const overall = useQuery({
-    queryKey: ['stats', 'overall'],
+    queryKey: ['stats', 'overall', range.start ?? null, range.end ?? null],
     enabled: !!user,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 10,  // 10 min - stats don't change often
+    gcTime: 1000 * 60 * 30,
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('beer_entries')
         .select('rating, tasted_at, style_id, user_id, beer_styles(name)')
+
+      if (range.start) query = query.gte('tasted_at', range.start)
+      if (range.end) query = query.lte('tasted_at', range.end)
+
+      const { data, error } = await query
       if (error) throw error
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -65,20 +102,25 @@ export function useStats() {
   })
 
   const leaderboard = useQuery({
-    queryKey: ['stats', 'leaderboard'],
+    queryKey: ['stats', 'leaderboard', range.start ?? null, range.end ?? null],
     enabled: !!user,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 10,  // 10 min
+    gcTime: 1000 * 60 * 30,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
         .select(`
           id, display_name, username, avatar_url,
-          beer_entries(rating, style_id)
+          beer_entries(rating, style_id, tasted_at)
         `)
       if (error) throw error
       return (data as any[] ?? [])
         .map((p: any) => {
-          const entries = p.beer_entries ?? []
+          const entries = (p.beer_entries ?? []).filter((e: any) => {
+            if (range.start && e.tasted_at < range.start) return false
+            if (range.end && e.tasted_at > range.end) return false
+            return true
+          })
           const total = entries.length
           const avg = total
             ? entries.reduce((s: number, e: any) => s + (e.rating ?? 0), 0) / total

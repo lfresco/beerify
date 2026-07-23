@@ -154,6 +154,10 @@ export type Invite = Database['public']['Tables']['invites']['Row']
 export type Like = Database['public']['Tables']['likes']['Row']
 export type Comment = Database['public']['Tables']['comments']['Row']
 
+export type FeedComment = Comment & {
+  author: Pick<Profile, 'id' | 'username' | 'display_name' | 'avatar_url'> | null
+}
+
 // Feed item: beer entry enriched with related data
 export interface FeedEntry {
   entry: BeerEntry
@@ -162,6 +166,6 @@ export interface FeedEntry {
   brand: BeerBrand | null
   photos: Photo[]
   likes: Like[]
-  comments: Comment[]
+  comments: FeedComment[]
   userHasLiked: boolean
 }
