@@ -33,7 +33,9 @@ export function FeedCard({ item, currentUserId, onEdit, onDelete }: FeedCardProp
         setPhotoUrl(null)
         return
       }
-      const signed = await getSignedUrl(firstPhoto.storage_path)
+      const signed = await getSignedUrl(firstPhoto.storage_path, {
+        transform: { width: 960, height: 560, quality: 60, resize: 'cover' },
+      })
       if (mounted) setPhotoUrl(signed)
     }
     void loadPhotoUrl()
