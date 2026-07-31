@@ -18,12 +18,12 @@ export function useFeed() {
         .from('beer_entries')
         .select(`
           id, user_id, beer_brand_id, name, brewery, style_id, abv, rating, notes, tasted_at, created_at,
-          profiles(id, username, avatar_url),
+          profiles(id, username, display_name, avatar_url),
           beer_styles(id, name),
           beer_brands(id, name),
           photos(id, storage_path),
           likes(user_id),
-          comments(id, user_id, content, created_at)
+          comments(id, beer_entry_id, user_id, content, created_at, updated_at, profiles(id, username, display_name, avatar_url))
         `)
         .order('created_at', { ascending: false })
         .limit(30)
@@ -50,7 +50,15 @@ export function useFeed() {
         brand: row.beer_brands,
         photos: row.photos ?? [],
         likes: row.likes ?? [],
-        comments: row.comments ?? [],
+        comments: (row.comments ?? []).map((comment: any) => ({
+          id: comment.id,
+          beer_entry_id: comment.beer_entry_id,
+          user_id: comment.user_id,
+          content: comment.content,
+          created_at: comment.created_at,
+          updated_at: comment.updated_at,
+          author: comment.profiles ?? null,
+        })),
         userHasLiked: (row.likes ?? []).some((l: any) => l.user_id === user?.id),
       }))
     },

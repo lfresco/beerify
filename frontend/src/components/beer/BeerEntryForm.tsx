@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
-import { uploadPhoto } from '@/lib/storage'
+import { compressPhotoForUpload, uploadPhoto } from '@/lib/storage'
 import { useAuthStore } from '@/store/auth'
 import { useUpdateEntry } from '@/hooks/useFeed'
 import { Button } from '@/components/ui/Button'
@@ -141,7 +141,8 @@ export function BeerEntryForm({ onSuccess, onCancel, editingEntry }: BeerEntryFo
       if (error) throw error
 
       if (photoFile && entry && !editingEntry) {
-        const storagePath = await uploadPhoto(photoFile, user!.id, entry.id)
+        const optimizedPhoto = await compressPhotoForUpload(photoFile)
+        const storagePath = await uploadPhoto(optimizedPhoto, user!.id, entry.id)
         await supabase.from('photos').insert({
           beer_entry_id: entry.id,
           user_id: user!.id,

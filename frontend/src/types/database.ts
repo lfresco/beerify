@@ -81,6 +81,7 @@ export interface Database {
           name: string
           owner_id: string
           description: string | null
+          group_image_url: string | null
           invite_code: string
           created_at: string
         }
@@ -97,6 +98,18 @@ export interface Database {
         }
         Insert: Omit<Database['public']['Tables']['group_members']['Row'], 'id' | 'joined_at'>
         Update: Partial<Database['public']['Tables']['group_members']['Insert']>
+      }
+      friend_requests: {
+        Row: {
+          id: string
+          requester_id: string
+          recipient_id: string
+          status: 'pending' | 'accepted' | 'rejected'
+          created_at: string
+          responded_at: string | null
+        }
+        Insert: Omit<Database['public']['Tables']['friend_requests']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['friend_requests']['Insert']>
       }
       invites: {
         Row: {
@@ -150,9 +163,14 @@ export type BeerEntry = Database['public']['Tables']['beer_entries']['Row']
 export type Photo = Database['public']['Tables']['photos']['Row']
 export type FriendGroup = Database['public']['Tables']['friend_groups']['Row']
 export type GroupMember = Database['public']['Tables']['group_members']['Row']
+export type FriendRequest = Database['public']['Tables']['friend_requests']['Row']
 export type Invite = Database['public']['Tables']['invites']['Row']
 export type Like = Database['public']['Tables']['likes']['Row']
 export type Comment = Database['public']['Tables']['comments']['Row']
+
+export type FeedComment = Comment & {
+  author: Pick<Profile, 'id' | 'username' | 'display_name' | 'avatar_url'> | null
+}
 
 // Feed item: beer entry enriched with related data
 export interface FeedEntry {
@@ -162,6 +180,6 @@ export interface FeedEntry {
   brand: BeerBrand | null
   photos: Photo[]
   likes: Like[]
-  comments: Comment[]
+  comments: FeedComment[]
   userHasLiked: boolean
 }

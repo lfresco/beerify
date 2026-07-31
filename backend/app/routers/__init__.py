@@ -1,1 +1,1 @@
-from app.routers import invites, catalog
+from app.routers import invites, catalog, friends

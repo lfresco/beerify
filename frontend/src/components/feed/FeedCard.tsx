@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { format, formatDistanceToNow } from 'date-fns'
+import { Link } from 'react-router-dom'
 import { Card } from '@/components/ui/Card'
 import { StarRating } from '@/components/ui/StarRating'
 import { Button } from '@/components/ui/Button'
@@ -32,7 +33,9 @@ export function FeedCard({ item, currentUserId, onEdit, onDelete }: FeedCardProp
         setPhotoUrl(null)
         return
       }
-      const signed = await getSignedUrl(firstPhoto.storage_path)
+      const signed = await getSignedUrl(firstPhoto.storage_path, {
+        transform: { width: 960, height: 560, quality: 60, resize: 'cover' },
+      })
       if (mounted) setPhotoUrl(signed)
     }
     void loadPhotoUrl()
@@ -70,11 +73,16 @@ export function FeedCard({ item, currentUserId, onEdit, onDelete }: FeedCardProp
       <div className="p-4 flex flex-col gap-3">
         {/* Header */}
         <div className="flex items-start gap-3">
-          <div className="w-9 h-9 rounded-full bg-amber-500 flex items-center justify-center text-slate-900 font-bold text-sm shrink-0">
+          <Link
+            to={`/people/${profile?.username ?? ''}`}
+            className="w-9 h-9 rounded-full bg-amber-500 flex items-center justify-center text-slate-900 font-bold text-sm shrink-0"
+          >
             {profile?.display_name?.[0]?.toUpperCase() ?? '?'}
-          </div>
+          </Link>
           <div className="flex-1 min-w-0">
-            <p className="font-semibold text-slate-100 truncate">{profile?.display_name ?? profile?.username}</p>
+            <Link to={`/people/${profile?.username ?? ''}`} className="font-semibold text-slate-100 truncate hover:text-amber-400 block">
+              {profile?.display_name ?? profile?.username}
+            </Link>
             <p className="text-xs text-slate-400">Posted {formatDistanceToNow(new Date(entry.created_at), { addSuffix: true })}</p>
             <p className="text-xs text-slate-500">Tasted {format(new Date(entry.tasted_at), 'PPP p')}</p>
           </div>
@@ -138,7 +146,11 @@ export function FeedCard({ item, currentUserId, onEdit, onDelete }: FeedCardProp
           <div className="flex flex-col gap-2">
             {comments.map((c) => (
               <div key={c.id} className="flex gap-2 text-sm">
-                <span className="font-medium text-slate-300 shrink-0">{c.user_id === currentUserId ? 'You' : c.user_id.slice(0, 6)}</span>
+                <span className="font-medium text-slate-300 shrink-0">
+                  {c.user_id === currentUserId
+                    ? 'You'
+                    : (c.author?.display_name ?? c.author?.username ?? 'Unknown')}
+                </span>
                 <span className="text-slate-400">{c.content}</span>
               </div>
             ))}

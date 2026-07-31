@@ -4,7 +4,7 @@ from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import invites, catalog
+from app.routers import invites, catalog, friends
 
 app = FastAPI(
     title="BeerLog API",
@@ -23,6 +23,7 @@ app.add_middleware(
 
 app.include_router(invites.router)
 app.include_router(catalog.router)
+app.include_router(friends.router)
 
 
 @app.middleware("http")

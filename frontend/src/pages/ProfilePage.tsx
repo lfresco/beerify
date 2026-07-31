@@ -8,6 +8,7 @@ import { useMyStats } from '@/hooks/useStats'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input, Textarea } from '@/components/ui/Input'
+import { FriendsPanel } from '@/components/friends/FriendsPanel'
 
 export default function ProfilePage() {
   const { profile } = useAuthStore()
@@ -118,6 +119,8 @@ export default function ProfilePage() {
           </div>
         )}
       </Card>
+
+      <FriendsPanel />
 
       <Button variant="danger" onClick={signOut}>Sign out</Button>
     </div>

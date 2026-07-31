@@ -3,12 +3,16 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
 import { Card } from '@/components/ui/Card'
-import { useStats } from '@/hooks/useStats'
+import { useStats, type StatsFilters } from '@/hooks/useStats'
 
 const COLORS = ['#f59e0b', '#fb923c', '#a78bfa', '#34d399', '#60a5fa', '#f472b6']
 
-export function StatsPanel() {
-  const { overall, leaderboard } = useStats()
+interface StatsPanelProps {
+  filters?: StatsFilters
+}
+
+export function StatsPanel({ filters }: StatsPanelProps) {
+  const { overall, leaderboard } = useStats(filters)
 
   if (overall.isLoading) {
     return (
