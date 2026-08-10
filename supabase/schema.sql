@@ -60,13 +60,11 @@ CREATE TRIGGER enforce_email_allowlist_trigger
   BEFORE INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.enforce_email_allowlist();
 
--- Auto-create profile + personal Friends group on sign-up
+-- Auto-create profile on sign-up
 CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
-DECLARE
-  new_group_id UUID;
 BEGIN
   INSERT INTO public.profiles (id, username, display_name)
   VALUES (
@@ -75,16 +73,6 @@ BEGIN
     COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1))
   )
   ON CONFLICT (id) DO NOTHING;
-
-  IF NOT EXISTS (SELECT 1 FROM public.friend_groups WHERE owner_id = NEW.id AND name = 'Friends') THEN
-    INSERT INTO public.friend_groups (name, owner_id, description)
-    VALUES ('Friends', NEW.id, 'Your personal friends group')
-    RETURNING id INTO new_group_id;
-
-    INSERT INTO public.group_members (group_id, user_id, role)
-    VALUES (new_group_id, NEW.id, 'owner')
-    ON CONFLICT DO NOTHING;
-  END IF;
 
   RETURN NEW;
 END;
@@ -303,16 +291,20 @@ ALTER TABLE likes         ENABLE ROW LEVEL SECURITY;
 ALTER TABLE comments      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE beer_entry_tags ENABLE ROW LEVEL SECURITY;
 
--- Helper: is the current user in the same group as a given user?
+-- Helper: is the current user a direct friend of a given user?
 CREATE OR REPLACE FUNCTION same_group(other_user_id UUID)
 RETURNS BOOLEAN LANGUAGE sql SECURITY DEFINER STABLE
 SET search_path = public, pg_temp
 AS $$
   SELECT EXISTS (
-    SELECT 1 FROM public.group_members gm1
-    JOIN public.group_members gm2 ON gm1.group_id = gm2.group_id
-    WHERE gm1.user_id = auth.uid()
-      AND gm2.user_id = other_user_id
+    SELECT 1
+    FROM public.friend_requests fr
+    WHERE fr.status = 'accepted'
+      AND (
+        (fr.requester_id = auth.uid() AND fr.recipient_id = other_user_id)
+        OR
+        (fr.recipient_id = auth.uid() AND fr.requester_id = other_user_id)
+      )
   );
 $$;
 
@@ -374,6 +366,7 @@ CREATE POLICY "members_insert" ON group_members FOR INSERT
       SELECT 1 FROM friend_groups
       WHERE id = group_members.group_id AND owner_id = auth.uid()
     )
+    AND same_group(group_members.user_id)
   );
 
 -- Group owner can remove members; members can leave themselves

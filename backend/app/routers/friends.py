@@ -13,56 +13,6 @@ class CreateFriendRequestBody(BaseModel):
     recipient_id: str
 
 
-def _ensure_personal_group(user_id: str) -> str:
-    sb = get_supabase()
-    group_result = (
-        sb.table("friend_groups")
-        .select("id")
-        .eq("owner_id", user_id)
-        .eq("name", "Friends")
-        .order("created_at", desc=False)
-        .limit(1)
-        .execute()
-    )
-
-    existing = group_result.data[0]["id"] if group_result.data else None
-    if existing:
-        return existing
-
-    created = (
-        sb.table("friend_groups")
-        .insert({
-            "name": "Friends",
-            "owner_id": user_id,
-            "description": "Your personal friends group",
-        })
-        .execute()
-    )
-
-    if not created.data:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create personal group")
-
-    group_id = created.data[0]["id"]
-    sb.table("group_members").insert({"group_id": group_id, "user_id": user_id, "role": "owner"}).execute()
-    return group_id
-
-
-def _add_member_if_missing(group_id: str, user_id: str) -> None:
-    sb = get_supabase()
-    exists = (
-        sb.table("group_members")
-        .select("id")
-        .eq("group_id", group_id)
-        .eq("user_id", user_id)
-        .limit(1)
-        .execute()
-    )
-    if exists.data:
-        return
-
-    sb.table("group_members").insert({"group_id": group_id, "user_id": user_id, "role": "member"}).execute()
-
-
 @router.get("/requests")
 async def list_requests(user_id: str = Depends(get_current_user_id)):
     sb = get_supabase()
@@ -161,12 +111,6 @@ async def accept_request(request_id: str, user_id: str = Depends(get_current_use
 
     if data["status"] != "pending":
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Friend request is no longer pending")
-
-    requester_group_id = _ensure_personal_group(data["requester_id"])
-    recipient_group_id = _ensure_personal_group(data["recipient_id"])
-
-    _add_member_if_missing(requester_group_id, data["recipient_id"])
-    _add_member_if_missing(recipient_group_id, data["requester_id"])
 
     sb.table("friend_requests").update(
         {

@@ -89,37 +89,6 @@ export function BeerEntryForm({ onSuccess, onCancel, editingEntry, initialTagged
     queryFn: async () => {
       const byId = new Map<string, { id: string; username: string; display_name: string | null }>()
 
-      const { data: groups, error: groupsError } = await supabase
-        .from('friend_groups')
-        .select('id')
-        .eq('owner_id', user!.id)
-        .eq('name', 'Friends')
-        .limit(1)
-
-      if (groupsError) throw groupsError
-
-      const personalGroupId = groups?.[0]?.id
-      if (personalGroupId) {
-        const { data: members, error: membersError } = await supabase
-          .from('group_members')
-          .select('user_id, profiles!inner(id, username, display_name)')
-          .eq('group_id', personalGroupId)
-
-        if (membersError) throw membersError
-
-        for (const member of members ?? []) {
-          if (member.user_id === user!.id) continue
-          const profile = firstProfile(member.profiles)
-          if (!profile) continue
-          byId.set(profile.id, {
-            id: profile.id,
-            username: profile.username,
-            display_name: profile.display_name,
-          })
-        }
-      }
-
-      // Fallback for older data where accepted requests exist but group membership is out of sync.
       const [{ data: incomingAccepted, error: incomingError }, { data: outgoingAccepted, error: outgoingError }] = await Promise.all([
         supabase
           .from('friend_requests')

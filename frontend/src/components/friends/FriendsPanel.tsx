@@ -96,7 +96,7 @@ export function FriendsPanel() {
       <div>
         <h3 className="text-lg font-bold text-slate-100">Friends</h3>
         <p className="text-sm text-slate-400">
-          Send requests, accept incoming ones, and manage who is in your Friends group.
+          Send requests, accept incoming ones, and optionally organize friends into groups.
         </p>
       </div>
 
@@ -167,7 +167,7 @@ export function FriendsPanel() {
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-slate-100">{g.name}</p>
                           {g.description && <p className="text-xs text-slate-400 mt-0.5">{g.description}</p>}
-                          {g.id === group?.id && <p className="text-xs text-amber-400 mt-1">Personal friends group</p>}
+                          {g.id === group?.id && <p className="text-xs text-amber-400 mt-1">Default group</p>}
                         </div>
                         <Button
                           size="sm"
@@ -375,14 +375,14 @@ export function FriendsPanel() {
           <div className="flex flex-col gap-1">
             {friends.data!.map((f) => (
               <UserRow
-                key={f.membership_id}
+                key={f.friendship_id}
                 profile={f.profile}
                 right={
                   <Button
                     size="sm"
                     variant="ghost"
                     loading={removeFriend.isPending}
-                    onClick={() => removeFriend.mutate(f.membership_id)}
+                    onClick={() => removeFriend.mutate(f.friendship_id)}
                   >
                     Remove
                   </Button>

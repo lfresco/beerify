@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { apiRequest } from '@/lib/api'
@@ -5,8 +6,7 @@ import { useAuthStore } from '@/store/auth'
 import type { Database, Profile } from '@/types/database'
 
 export interface FriendRow {
-  membership_id: string
-  role: 'owner' | 'member'
+  friendship_id: string
   profile: Profile
 }
 
@@ -37,6 +37,12 @@ export interface OwnedGroup {
   description: string | null
   group_image_url: string | null
   created_at: string
+}
+
+function firstProfile(value: any): Profile | null {
+  if (!value) return null
+  if (Array.isArray(value)) return (value[0] as Profile | undefined) ?? null
+  return value as Profile
 }
 
 /**
@@ -106,27 +112,53 @@ export function useFriends() {
     },
   })
 
-  const personalGroup = groups.data?.find((g) => g.name === 'Friends') ?? groups.data?.[0] ?? null
-  const groupId = personalGroup?.id
-
   const friends = useQuery({
-    queryKey: ['friends', 'members', groupId],
-    enabled: !!groupId,
+    queryKey: ['friends', 'accepted', user?.id],
+    enabled: !!user,
     queryFn: async (): Promise<FriendRow[]> => {
-      const { data, error } = await supabase
-        .from('group_members')
-        .select('id, role, user_id, profiles(*)')
-        .eq('group_id', groupId!)
-      if (error) throw error
-      return (data ?? [])
-        .filter((m: any) => m.user_id !== user!.id)
-        .map((m: any) => ({
-          membership_id: m.id,
-          role: m.role,
-          profile: m.profiles as Profile,
-        }))
+      const [{ data: incoming, error: incomingError }, { data: outgoing, error: outgoingError }] = await Promise.all([
+        supabase
+          .from('friend_requests')
+          .select('id, requester_id, profiles!requester_id(*)')
+          .eq('recipient_id', user!.id)
+          .eq('status', 'accepted'),
+        supabase
+          .from('friend_requests')
+          .select('id, recipient_id, profiles!recipient_id(*)')
+          .eq('requester_id', user!.id)
+          .eq('status', 'accepted'),
+      ])
+
+      if (incomingError) throw incomingError
+      if (outgoingError) throw outgoingError
+
+      const byId = new Map<string, FriendRow>()
+
+      for (const row of incoming ?? []) {
+        const profile = firstProfile(row.profiles)
+        if (!profile || row.requester_id === user!.id) continue
+        byId.set(profile.id, {
+          friendship_id: row.id,
+          profile,
+        })
+      }
+
+      for (const row of outgoing ?? []) {
+        const profile = firstProfile(row.profiles)
+        if (!profile || row.recipient_id === user!.id) continue
+        byId.set(profile.id, {
+          friendship_id: row.id,
+          profile,
+        })
+      }
+
+      return Array.from(byId.values())
     },
   })
+
+  const personalGroup = useMemo(() => (
+    groups.data?.find((g) => g.name === 'Friends') ?? groups.data?.[0] ?? null
+  ), [groups.data])
 
   const requests = useQuery({
     queryKey: ['friends', 'requests', user?.id],
@@ -147,6 +179,7 @@ export function useFriends() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['friends', 'requests'] })
+      qc.invalidateQueries({ queryKey: ['friends', 'accepted'] })
     },
   })
 
@@ -158,7 +191,7 @@ export function useFriends() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['friends', 'requests'] })
-      qc.invalidateQueries({ queryKey: ['friends', 'members'] })
+      qc.invalidateQueries({ queryKey: ['friends', 'accepted'] })
     },
   })
 
@@ -168,7 +201,10 @@ export function useFriends() {
         method: 'POST',
       }, token))
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['friends', 'requests'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['friends', 'requests'] })
+      qc.invalidateQueries({ queryKey: ['friends', 'accepted'] })
+    },
   })
 
   const cancelRequest = useMutation({
@@ -177,18 +213,25 @@ export function useFriends() {
         method: 'DELETE',
       }, token))
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['friends', 'requests'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['friends', 'requests'] })
+      qc.invalidateQueries({ queryKey: ['friends', 'accepted'] })
+    },
   })
 
   const removeFriend = useMutation({
-    mutationFn: async (membershipId: string) => {
+    mutationFn: async (friendshipId: string) => {
       const { error } = await supabase
-        .from('group_members')
+        .from('friend_requests')
         .delete()
-        .eq('id', membershipId)
+        .eq('id', friendshipId)
+        .eq('status', 'accepted')
       if (error) throw new Error(error.message)
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['friends', 'members'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['friends', 'accepted'] })
+      qc.invalidateQueries({ queryKey: ['friends', 'requests'] })
+    },
   })
 
   const createGroup = useMutation({
