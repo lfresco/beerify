@@ -54,6 +54,23 @@ export function FriendsPanel() {
     [outgoingPending],
   )
 
+  const acceptedConnectionIds = useMemo(() => {
+    const ids = new Set<string>()
+    for (const row of requests.data?.incoming ?? []) {
+      if (row.status === 'accepted') ids.add(row.requester_id)
+    }
+    for (const row of requests.data?.outgoing ?? []) {
+      if (row.status === 'accepted') ids.add(row.recipient_id)
+    }
+    return ids
+  }, [requests.data])
+
+  const connectedIds = useMemo(() => {
+    const ids = new Set(friendIds)
+    for (const id of acceptedConnectionIds) ids.add(id)
+    return ids
+  }, [friendIds, acceptedConnectionIds])
+
   function startEditGroup(groupId: string, name: string, description: string | null, imageUrl: string | null) {
     setEditingGroupId(groupId)
     setEditGroupName(name)
@@ -303,7 +320,7 @@ export function FriendsPanel() {
                 key={p.id}
                 profile={p}
                 right={
-                  friendIds.has(p.id) ? (
+                  connectedIds.has(p.id) ? (
                     <span className="text-xs text-slate-500">Added</span>
                   ) : incomingRequesterIds.has(p.id) ? (
                     <span className="text-xs text-slate-500">Requested you</span>

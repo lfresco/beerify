@@ -139,7 +139,14 @@ export default function PublicProfilePage() {
 
   const profile = profileQuery.data
   const isSelf = profile.id === currentUser?.id
-  const isFriend = (friends.data ?? []).some((friend) => friend.profile.id === profile.id)
+  const hasAcceptedRequest = [
+    ...(requests.data?.incoming ?? []),
+    ...(requests.data?.outgoing ?? []),
+  ].some((request) => (
+    request.status === 'accepted'
+    && (request.requester_id === profile.id || request.recipient_id === profile.id)
+  ))
+  const isFriend = (friends.data ?? []).some((friend) => friend.profile.id === profile.id) || hasAcceptedRequest
   const incomingRequest = (requests.data?.incoming ?? []).find(
     (request) => request.requester_id === profile.id && request.status === 'pending',
   )
