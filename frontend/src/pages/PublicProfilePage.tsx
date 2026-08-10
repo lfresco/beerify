@@ -39,7 +39,18 @@ export default function PublicProfilePage() {
     queryKey: ['public-profile', username, 'entries'],
     enabled: !!profileQuery.data?.id,
     queryFn: async (): Promise<FeedEntry[]> => {
-      const { data: entries, error } = await supabase
+      const profileId = profileQuery.data!.id
+
+      const { data: taggedRows, error: taggedError } = await supabase
+        .from('beer_entry_tags')
+        .select('beer_entry_id')
+        .eq('tagged_user_id', profileId)
+
+      if (taggedError) throw taggedError
+
+      const taggedEntryIds = Array.from(new Set((taggedRows ?? []).map((row) => row.beer_entry_id)))
+
+      let entriesBuilder = supabase
         .from('beer_entries')
         .select(`
           id, user_id, beer_brand_id, name, brewery, style_id, abv, rating, notes,
@@ -53,9 +64,16 @@ export default function PublicProfilePage() {
           comments(id, beer_entry_id, user_id, content, created_at, updated_at, profiles(id, username, display_name, avatar_url)),
           beer_entry_tags(id, beer_entry_id, tagged_user_id, tagged_by_id, created_at, profiles!tagged_user_id(id, username, display_name, avatar_url))
         `)
-        .eq('user_id', profileQuery.data!.id)
         .order('created_at', { ascending: false })
         .limit(20)
+
+      if (taggedEntryIds.length > 0) {
+        entriesBuilder = entriesBuilder.or(`user_id.eq.${profileId},id.in.(${taggedEntryIds.join(',')})`)
+      } else {
+        entriesBuilder = entriesBuilder.eq('user_id', profileId)
+      }
+
+      const { data: entries, error } = await entriesBuilder
 
       if (error) throw error
 

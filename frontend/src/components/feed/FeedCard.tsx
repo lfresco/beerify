@@ -115,9 +115,23 @@ export function FeedCard({ item, currentUserId, onEdit, onDelete }: FeedCardProp
         {tags.length > 0 && (
           <p className="text-xs text-slate-400">
             With{' '}
-            {tags
-              .map((tag) => tag.taggedProfile?.display_name ?? tag.taggedProfile?.username ?? 'Unknown')
-              .join(', ')}
+            {tags.map((tag, index) => {
+              const taggedName = tag.taggedProfile?.display_name ?? tag.taggedProfile?.username ?? 'Unknown'
+              const taggedUsername = tag.taggedProfile?.username
+
+              return (
+                <span key={tag.id}>
+                  {taggedUsername ? (
+                    <Link to={`/people/${taggedUsername}`} className="text-amber-400 hover:underline">
+                      {taggedName}
+                    </Link>
+                  ) : (
+                    <span>{taggedName}</span>
+                  )}
+                  {index < tags.length - 1 ? ', ' : ''}
+                </span>
+              )
+            })}
           </p>
         )}
 
