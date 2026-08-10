@@ -105,6 +105,13 @@ export function FeedCard({ item, currentUserId, onEdit, onDelete }: FeedCardProp
 
         {entry.notes && <p className="text-sm text-slate-300 leading-relaxed">{entry.notes}</p>}
 
+        {(entry.place_name || entry.city) && (
+          <p className="text-xs text-slate-400">
+            📍 {entry.place_name ?? (entry.location_type === 'home' ? 'Home' : 'City')}
+            {entry.city ? `, ${entry.city}` : ''}
+          </p>
+        )}
+
         {tags.length > 0 && (
           <p className="text-xs text-slate-400">
             With{' '}

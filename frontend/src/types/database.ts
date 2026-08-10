@@ -56,6 +56,14 @@ export interface Database {
           abv: number | null
           rating: number
           notes: string | null
+          location_type: 'bar' | 'home' | 'city' | null
+          place_provider: string | null
+          place_id: string | null
+          place_name: string | null
+          city: string | null
+          latitude: number | null
+          longitude: number | null
+          place_key: string | null
           tasted_at: string
           created_at: string
           updated_at: string

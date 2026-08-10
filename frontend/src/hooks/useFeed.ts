@@ -17,7 +17,9 @@ export function useFeed() {
       const { data: entries, error } = await supabase
         .from('beer_entries')
         .select(`
-          id, user_id, beer_brand_id, name, brewery, style_id, abv, rating, notes, tasted_at, created_at,
+          id, user_id, beer_brand_id, name, brewery, style_id, abv, rating, notes,
+          location_type, place_provider, place_id, place_name, city, latitude, longitude, place_key,
+          tasted_at, created_at,
           profiles(id, username, display_name, avatar_url),
           beer_styles(id, name),
           beer_brands(id, name),
@@ -42,6 +44,14 @@ export function useFeed() {
           abv: row.abv,
           rating: row.rating,
           notes: row.notes,
+          location_type: row.location_type,
+          place_provider: row.place_provider,
+          place_id: row.place_id,
+          place_name: row.place_name,
+          city: row.city,
+          latitude: row.latitude,
+          longitude: row.longitude,
+          place_key: row.place_key,
           tasted_at: row.tasted_at,
           created_at: row.created_at,
           updated_at: row.updated_at,
@@ -90,6 +100,14 @@ export function useUpdateEntry() {
         abv: number | null
         rating: number
         notes: string | null
+        location_type: 'bar' | 'home' | 'city' | null
+        place_provider: string | null
+        place_id: string | null
+        place_name: string | null
+        city: string | null
+        latitude: number | null
+        longitude: number | null
+        place_key: string | null
         tasted_at: string
       }
     }) => {
