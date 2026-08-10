@@ -41,6 +41,8 @@ interface BeerEntryFormProps {
   initialTaggedUserIds?: string[]
 }
 
+const EMPTY_TAGGED_USER_IDS: string[] = []
+
 interface FriendRequestsResponse {
   incoming: Array<{
     id: string
@@ -124,7 +126,7 @@ function nowDateTimeLocalValue() {
   return new Date(now.getTime() - tzOffsetMs).toISOString().slice(0, 16)
 }
 
-export function BeerEntryForm({ onSuccess, onCancel, editingEntry, initialTaggedUserIds = [] }: BeerEntryFormProps) {
+export function BeerEntryForm({ onSuccess, onCancel, editingEntry, initialTaggedUserIds = EMPTY_TAGGED_USER_IDS }: BeerEntryFormProps) {
   const user = useAuthStore((s) => s.user)
   const qc = useQueryClient()
   const [photoFile, setPhotoFile] = useState<File | null>(null)
@@ -220,6 +222,8 @@ export function BeerEntryForm({ onSuccess, onCancel, editingEntry, initialTagged
     },
   })
 
+  const initialTagsKey = useMemo(() => initialTaggedUserIds.join('|'), [initialTaggedUserIds])
+
   useEffect(() => {
     if (editingEntry) {
       reset({
@@ -288,7 +292,7 @@ export function BeerEntryForm({ onSuccess, onCancel, editingEntry, initialTagged
     setCityInput('')
     setGeoCoords(null)
     setLocationError(null)
-  }, [editingEntry, initialTaggedUserIds, reset])
+  }, [editingEntry, initialTagsKey, reset])
 
   function toggleTag(userId: string) {
     setSelectedFriendIds((prev) => (

@@ -199,14 +199,49 @@ CREATE TABLE IF NOT EXISTS beer_entries (
   abv           NUMERIC(5,2),
   rating        SMALLINT    NOT NULL CHECK (rating BETWEEN 1 AND 5),
   notes         TEXT,
+  location_type TEXT        CHECK (location_type IN ('bar', 'home', 'city')),
+  place_provider TEXT,
+  place_id      TEXT,
+  place_name    TEXT,
+  city          TEXT,
+  latitude      NUMERIC(9,6),
+  longitude     NUMERIC(9,6),
+  place_key     TEXT,
   tasted_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+ALTER TABLE beer_entries
+  ADD COLUMN IF NOT EXISTS location_type TEXT;
+
+ALTER TABLE beer_entries
+  ADD COLUMN IF NOT EXISTS place_provider TEXT;
+
+ALTER TABLE beer_entries
+  ADD COLUMN IF NOT EXISTS place_id TEXT;
+
+ALTER TABLE beer_entries
+  ADD COLUMN IF NOT EXISTS place_name TEXT;
+
+ALTER TABLE beer_entries
+  ADD COLUMN IF NOT EXISTS city TEXT;
+
+ALTER TABLE beer_entries
+  ADD COLUMN IF NOT EXISTS latitude NUMERIC(9,6);
+
+ALTER TABLE beer_entries
+  ADD COLUMN IF NOT EXISTS longitude NUMERIC(9,6);
+
+ALTER TABLE beer_entries
+  ADD COLUMN IF NOT EXISTS place_key TEXT;
+
 CREATE INDEX IF NOT EXISTS idx_beer_entries_user     ON beer_entries(user_id);
 CREATE INDEX IF NOT EXISTS idx_beer_entries_tasted   ON beer_entries(tasted_at DESC);
 CREATE INDEX IF NOT EXISTS idx_beer_entries_style    ON beer_entries(style_id);
+CREATE INDEX IF NOT EXISTS idx_beer_entries_place_id ON beer_entries(place_id);
+CREATE INDEX IF NOT EXISTS idx_beer_entries_place_key ON beer_entries(place_key);
+CREATE INDEX IF NOT EXISTS idx_beer_entries_city ON beer_entries(city);
 
 CREATE TRIGGER beer_entries_updated_at BEFORE UPDATE ON beer_entries
   FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
