@@ -53,10 +53,42 @@ export function useFriends() {
 
   async function getAccessToken(): Promise<string> {
     const { data, error } = await supabase.auth.getSession()
-    if (error || !data.session?.access_token) {
+    if (error || !data.session) {
       throw new Error('Your session expired. Please sign in again.')
     }
+
+    const expiresAtMs = (data.session.expires_at ?? 0) * 1000
+    const needsRefresh = expiresAtMs > 0 && expiresAtMs <= Date.now() + 30_000
+
+    if (needsRefresh) {
+      const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession()
+      if (refreshError || !refreshed.session?.access_token) {
+        throw new Error('Your session expired. Please sign in again.')
+      }
+      return refreshed.session.access_token
+    }
+
     return data.session.access_token
+  }
+
+  async function withFreshAuth<T>(
+    op: (token: string) => Promise<T>,
+  ): Promise<T> {
+    const token = await getAccessToken()
+    try {
+      return await op(token)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : ''
+      const shouldRetry = /invalid or expired token|401/i.test(message)
+      if (!shouldRetry) throw err
+
+      const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession()
+      if (refreshError || !refreshed.session?.access_token) {
+        throw new Error('Your session expired. Please sign in again.')
+      }
+
+      return op(refreshed.session.access_token)
+    }
   }
 
   const groups = useQuery({
@@ -101,19 +133,17 @@ export function useFriends() {
     enabled: !!user,
     staleTime: 1000 * 30,
     queryFn: async () => {
-      const token = await getAccessToken()
-      return apiRequest<FriendRequestsResponse>('/friends/requests', {}, token)
+      return withFreshAuth((token) => apiRequest<FriendRequestsResponse>('/friends/requests', {}, token))
     },
   })
 
   const sendRequest = useMutation({
     mutationFn: async (profileId: string) => {
       if (profileId === user!.id) throw new Error("You can't add yourself")
-      const token = await getAccessToken()
-      await apiRequest('/friends/requests', {
+      await withFreshAuth((token) => apiRequest('/friends/requests', {
         method: 'POST',
         body: JSON.stringify({ recipient_id: profileId }),
-      }, token)
+      }, token))
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['friends', 'requests'] })
@@ -122,10 +152,9 @@ export function useFriends() {
 
   const acceptRequest = useMutation({
     mutationFn: async (requestId: string) => {
-      const token = await getAccessToken()
-      await apiRequest(`/friends/requests/${requestId}/accept`, {
+      await withFreshAuth((token) => apiRequest(`/friends/requests/${requestId}/accept`, {
         method: 'POST',
-      }, token)
+      }, token))
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['friends', 'requests'] })
@@ -135,20 +164,18 @@ export function useFriends() {
 
   const declineRequest = useMutation({
     mutationFn: async (requestId: string) => {
-      const token = await getAccessToken()
-      await apiRequest(`/friends/requests/${requestId}/decline`, {
+      await withFreshAuth((token) => apiRequest(`/friends/requests/${requestId}/decline`, {
         method: 'POST',
-      }, token)
+      }, token))
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['friends', 'requests'] }),
   })
 
   const cancelRequest = useMutation({
     mutationFn: async (requestId: string) => {
-      const token = await getAccessToken()
-      await apiRequest(`/friends/requests/${requestId}`, {
+      await withFreshAuth((token) => apiRequest(`/friends/requests/${requestId}`, {
         method: 'DELETE',
-      }, token)
+      }, token))
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['friends', 'requests'] }),
   })
