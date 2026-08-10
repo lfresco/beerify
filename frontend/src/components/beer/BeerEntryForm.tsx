@@ -44,6 +44,12 @@ function nowDateTimeLocalValue() {
   return new Date(now.getTime() - tzOffsetMs).toISOString().slice(0, 16)
 }
 
+function firstProfile(value: any): { id: string; username: string; display_name: string | null } | null {
+  if (!value) return null
+  if (Array.isArray(value)) return value[0] ?? null
+  return value
+}
+
 export function BeerEntryForm({ onSuccess, onCancel, editingEntry, initialTaggedUserIds = [] }: BeerEntryFormProps) {
   const user = useAuthStore((s) => s.user)
   const qc = useQueryClient()
@@ -81,6 +87,8 @@ export function BeerEntryForm({ onSuccess, onCancel, editingEntry, initialTagged
     enabled: !!user,
     staleTime: 1000 * 60 * 2,
     queryFn: async () => {
+      const byId = new Map<string, { id: string; username: string; display_name: string | null }>()
+
       const { data: groups, error: groupsError } = await supabase
         .from('friend_groups')
         .select('id')
@@ -91,22 +99,64 @@ export function BeerEntryForm({ onSuccess, onCancel, editingEntry, initialTagged
       if (groupsError) throw groupsError
 
       const personalGroupId = groups?.[0]?.id
-      if (!personalGroupId) return []
+      if (personalGroupId) {
+        const { data: members, error: membersError } = await supabase
+          .from('group_members')
+          .select('user_id, profiles!inner(id, username, display_name)')
+          .eq('group_id', personalGroupId)
 
-      const { data: members, error: membersError } = await supabase
-        .from('group_members')
-        .select('user_id, profiles!inner(id, username, display_name)')
-        .eq('group_id', personalGroupId)
+        if (membersError) throw membersError
 
-      if (membersError) throw membersError
+        for (const member of members ?? []) {
+          if (member.user_id === user!.id) continue
+          const profile = firstProfile(member.profiles)
+          if (!profile) continue
+          byId.set(profile.id, {
+            id: profile.id,
+            username: profile.username,
+            display_name: profile.display_name,
+          })
+        }
+      }
 
-      return (members ?? [])
-        .filter((m: any) => m.user_id !== user!.id)
-        .map((m: any) => ({
-          id: m.profiles.id,
-          username: m.profiles.username,
-          display_name: m.profiles.display_name,
-        }))
+      // Fallback for older data where accepted requests exist but group membership is out of sync.
+      const [{ data: incomingAccepted, error: incomingError }, { data: outgoingAccepted, error: outgoingError }] = await Promise.all([
+        supabase
+          .from('friend_requests')
+          .select('requester_id, profiles!requester_id(id, username, display_name)')
+          .eq('recipient_id', user!.id)
+          .eq('status', 'accepted'),
+        supabase
+          .from('friend_requests')
+          .select('recipient_id, profiles!recipient_id(id, username, display_name)')
+          .eq('requester_id', user!.id)
+          .eq('status', 'accepted'),
+      ])
+
+      if (incomingError) throw incomingError
+      if (outgoingError) throw outgoingError
+
+      for (const request of incomingAccepted ?? []) {
+        const profile = firstProfile(request.profiles)
+        if (!profile || request.requester_id === user!.id) continue
+        byId.set(profile.id, {
+          id: profile.id,
+          username: profile.username,
+          display_name: profile.display_name,
+        })
+      }
+
+      for (const request of outgoingAccepted ?? []) {
+        const profile = firstProfile(request.profiles)
+        if (!profile || request.recipient_id === user!.id) continue
+        byId.set(profile.id, {
+          id: profile.id,
+          username: profile.username,
+          display_name: profile.display_name,
+        })
+      }
+
+      return Array.from(byId.values())
     },
   })
 
