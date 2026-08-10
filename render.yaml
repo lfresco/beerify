@@ -14,7 +14,7 @@ services:
       - key: ADMIN_SECRET
         sync: false
       - key: FRONTEND_ORIGINS
-        value: https://lfresco.github.io/beerify,http://localhost:5173
+        value: https://lfresco.github.io,http://localhost:5173
       - key: ENVIRONMENT
         value: production
       - key: PYTHON_VERSION

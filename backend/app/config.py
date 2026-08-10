@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from urllib.parse import urlsplit
 
 
 class Settings(BaseSettings):
@@ -12,10 +13,30 @@ class Settings(BaseSettings):
     frontend_origins: str | None = None
     environment: str = "production"
 
+    @staticmethod
+    def _normalize_origin(origin: str) -> str:
+        raw = origin.strip().rstrip("/")
+        if not raw:
+            return raw
+
+        parts = urlsplit(raw)
+        if parts.scheme and parts.netloc:
+            return f"{parts.scheme}://{parts.netloc}"
+
+        return raw
+
     def allowed_origins(self) -> list[str]:
+        candidates = [self.frontend_origin]
         if self.frontend_origins:
-            return [origin.strip() for origin in self.frontend_origins.split(",") if origin.strip()]
-        return [self.frontend_origin]
+            candidates = [origin for origin in self.frontend_origins.split(",") if origin.strip()]
+
+        normalized: list[str] = []
+        for origin in candidates:
+            parsed = self._normalize_origin(origin)
+            if parsed and parsed not in normalized:
+                normalized.append(parsed)
+
+        return normalized
 
     def jwt_issuer(self) -> str:
         return f"{self.supabase_url.rstrip('/')}/auth/v1"

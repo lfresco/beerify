@@ -2,7 +2,9 @@ import { format } from 'date-fns'
 import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import { useFriends } from '@/hooks/useFriends'
 import { Card } from '@/components/ui/Card'
+import { Button } from '@/components/ui/Button'
 import { FeedCard } from '@/components/feed/FeedCard'
 import { useAuthStore } from '@/store/auth'
 import type { FeedEntry } from '@/types/database'
@@ -10,6 +12,14 @@ import type { FeedEntry } from '@/types/database'
 export default function PublicProfilePage() {
   const { username } = useParams()
   const currentUser = useAuthStore((s) => s.user)
+  const {
+    friends,
+    requests,
+    sendRequest,
+    acceptRequest,
+    declineRequest,
+    cancelRequest,
+  } = useFriends()
 
   const profileQuery = useQuery({
     queryKey: ['public-profile', username],
@@ -89,6 +99,29 @@ export default function PublicProfilePage() {
     },
   })
 
+  const statsQuery = useQuery({
+    queryKey: ['public-profile', username, 'stats'],
+    enabled: !!profileQuery.data?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('beer_entries')
+        .select('rating, style_id, created_at')
+        .eq('user_id', profileQuery.data!.id)
+
+      if (error) throw error
+
+      const entries = data ?? []
+      const totalBeers = entries.length
+      const avgRating = totalBeers
+        ? entries.reduce((sum, row) => sum + (row.rating ?? 0), 0) / totalBeers
+        : 0
+      const stylesTried = new Set(entries.map((row) => row.style_id).filter(Boolean)).size
+      const activeMonths = new Set(entries.map((row) => row.created_at.slice(0, 7))).size
+
+      return { totalBeers, avgRating, stylesTried, activeMonths }
+    },
+  })
+
   if (profileQuery.isLoading) {
     return <div className="max-w-xl mx-auto px-4 py-8 text-slate-400">Loading profile...</div>
   }
@@ -106,6 +139,13 @@ export default function PublicProfilePage() {
 
   const profile = profileQuery.data
   const isSelf = profile.id === currentUser?.id
+  const isFriend = (friends.data ?? []).some((friend) => friend.profile.id === profile.id)
+  const incomingRequest = (requests.data?.incoming ?? []).find(
+    (request) => request.requester_id === profile.id && request.status === 'pending',
+  )
+  const outgoingRequest = (requests.data?.outgoing ?? []).find(
+    (request) => request.recipient_id === profile.id && request.status === 'pending',
+  )
 
   return (
     <div className="max-w-xl mx-auto px-4 py-6 flex flex-col gap-4">
@@ -134,8 +174,88 @@ export default function PublicProfilePage() {
                 Edit your profile
               </Link>
             )}
+            {!isSelf && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {isFriend ? (
+                  <span className="text-xs text-emerald-300 bg-emerald-900/30 border border-emerald-700 px-2 py-1 rounded-full">
+                    Friends
+                  </span>
+                ) : incomingRequest ? (
+                  <>
+                    <Button
+                      size="sm"
+                      loading={acceptRequest.isPending}
+                      onClick={() => acceptRequest.mutate(incomingRequest.id)}
+                    >
+                      Accept request
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      loading={declineRequest.isPending}
+                      onClick={() => declineRequest.mutate(incomingRequest.id)}
+                    >
+                      Decline
+                    </Button>
+                  </>
+                ) : outgoingRequest ? (
+                  <>
+                    <span className="text-xs text-slate-300 bg-slate-800 border border-slate-600 px-2 py-1 rounded-full">
+                      Request pending
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      loading={cancelRequest.isPending}
+                      onClick={() => cancelRequest.mutate(outgoingRequest.id)}
+                    >
+                      Cancel request
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    size="sm"
+                    loading={sendRequest.isPending}
+                    onClick={() => sendRequest.mutate(profile.id)}
+                  >
+                    Add friend
+                  </Button>
+                )}
+              </div>
+            )}
+            {!isSelf && sendRequest.error && (
+              <p className="text-xs text-red-400 mt-2">{(sendRequest.error as Error).message}</p>
+            )}
           </div>
         </div>
+      </Card>
+
+      <Card className="p-5">
+        <h2 className="text-base font-semibold text-slate-100 mb-3">User stats</h2>
+        {statsQuery.isLoading ? (
+          <p className="text-sm text-slate-400">Loading stats...</p>
+        ) : statsQuery.error ? (
+          <p className="text-sm text-red-400">Failed to load stats.</p>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-3">
+              <p className="text-xs text-slate-400">Beers logged</p>
+              <p className="text-2xl font-bold text-amber-400">{statsQuery.data?.totalBeers ?? 0}</p>
+            </div>
+            <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-3">
+              <p className="text-xs text-slate-400">Average rating</p>
+              <p className="text-2xl font-bold text-amber-400">{(statsQuery.data?.avgRating ?? 0).toFixed(1)}</p>
+            </div>
+            <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-3">
+              <p className="text-xs text-slate-400">Styles tried</p>
+              <p className="text-2xl font-bold text-amber-400">{statsQuery.data?.stylesTried ?? 0}</p>
+            </div>
+            <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-3">
+              <p className="text-xs text-slate-400">Active months</p>
+              <p className="text-2xl font-bold text-amber-400">{statsQuery.data?.activeMonths ?? 0}</p>
+            </div>
+          </div>
+        )}
       </Card>
 
       <h2 className="text-base font-semibold text-slate-200">Recent beers</h2>
