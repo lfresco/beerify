@@ -39,12 +39,6 @@ export interface OwnedGroup {
   created_at: string
 }
 
-function firstProfile(value: any): Profile | null {
-  if (!value) return null
-  if (Array.isArray(value)) return (value[0] as Profile | undefined) ?? null
-  return value as Profile
-}
-
 /**
  * Manages the current user's friends network:
  *   - Loads owned groups and resolves the personal "Friends" group
@@ -119,12 +113,12 @@ export function useFriends() {
       const [{ data: incoming, error: incomingError }, { data: outgoing, error: outgoingError }] = await Promise.all([
         supabase
           .from('friend_requests')
-          .select('id, requester_id, profiles!requester_id(*)')
+          .select('id, requester_id')
           .eq('recipient_id', user!.id)
           .eq('status', 'accepted'),
         supabase
           .from('friend_requests')
-          .select('id, recipient_id, profiles!recipient_id(*)')
+          .select('id, recipient_id')
           .eq('requester_id', user!.id)
           .eq('status', 'accepted'),
       ])
@@ -132,27 +126,32 @@ export function useFriends() {
       if (incomingError) throw incomingError
       if (outgoingError) throw outgoingError
 
-      const byId = new Map<string, FriendRow>()
+      const friendshipByProfileId = new Map<string, string>()
 
       for (const row of incoming ?? []) {
-        const profile = firstProfile(row.profiles)
-        if (!profile || row.requester_id === user!.id) continue
-        byId.set(profile.id, {
-          friendship_id: row.id,
-          profile,
-        })
+        if (row.requester_id === user!.id) continue
+        friendshipByProfileId.set(row.requester_id, row.id)
       }
 
       for (const row of outgoing ?? []) {
-        const profile = firstProfile(row.profiles)
-        if (!profile || row.recipient_id === user!.id) continue
-        byId.set(profile.id, {
-          friendship_id: row.id,
-          profile,
-        })
+        if (row.recipient_id === user!.id) continue
+        friendshipByProfileId.set(row.recipient_id, row.id)
       }
 
-      return Array.from(byId.values())
+      const friendIds = Array.from(friendshipByProfileId.keys())
+      if (friendIds.length === 0) return []
+
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('id', friendIds)
+
+      if (profilesError) throw profilesError
+
+      return (profiles ?? []).map((profile) => ({
+        friendship_id: friendshipByProfileId.get(profile.id) ?? profile.id,
+        profile: profile as Profile,
+      }))
     },
   })
 

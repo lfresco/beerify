@@ -44,12 +44,6 @@ function nowDateTimeLocalValue() {
   return new Date(now.getTime() - tzOffsetMs).toISOString().slice(0, 16)
 }
 
-function firstProfile(value: any): { id: string; username: string; display_name: string | null } | null {
-  if (!value) return null
-  if (Array.isArray(value)) return value[0] ?? null
-  return value
-}
-
 export function BeerEntryForm({ onSuccess, onCancel, editingEntry, initialTaggedUserIds = [] }: BeerEntryFormProps) {
   const user = useAuthStore((s) => s.user)
   const qc = useQueryClient()
@@ -92,12 +86,12 @@ export function BeerEntryForm({ onSuccess, onCancel, editingEntry, initialTagged
       const [{ data: incomingAccepted, error: incomingError }, { data: outgoingAccepted, error: outgoingError }] = await Promise.all([
         supabase
           .from('friend_requests')
-          .select('requester_id, profiles!requester_id(id, username, display_name)')
+          .select('requester_id')
           .eq('recipient_id', user!.id)
           .eq('status', 'accepted'),
         supabase
           .from('friend_requests')
-          .select('recipient_id, profiles!recipient_id(id, username, display_name)')
+          .select('recipient_id')
           .eq('requester_id', user!.id)
           .eq('status', 'accepted'),
       ])
@@ -105,19 +99,30 @@ export function BeerEntryForm({ onSuccess, onCancel, editingEntry, initialTagged
       if (incomingError) throw incomingError
       if (outgoingError) throw outgoingError
 
+      const friendIds = new Set<string>()
+
       for (const request of incomingAccepted ?? []) {
-        const profile = firstProfile(request.profiles)
-        if (!profile || request.requester_id === user!.id) continue
-        byId.set(profile.id, {
-          id: profile.id,
-          username: profile.username,
-          display_name: profile.display_name,
-        })
+        if (request.requester_id && request.requester_id !== user!.id) {
+          friendIds.add(request.requester_id)
+        }
       }
 
       for (const request of outgoingAccepted ?? []) {
-        const profile = firstProfile(request.profiles)
-        if (!profile || request.recipient_id === user!.id) continue
+        if (request.recipient_id && request.recipient_id !== user!.id) {
+          friendIds.add(request.recipient_id)
+        }
+      }
+
+      if (friendIds.size === 0) return []
+
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username, display_name')
+        .in('id', Array.from(friendIds))
+
+      if (profilesError) throw profilesError
+
+      for (const profile of profiles ?? []) {
         byId.set(profile.id, {
           id: profile.id,
           username: profile.username,
