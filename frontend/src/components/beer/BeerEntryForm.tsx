@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -67,6 +67,7 @@ export function BeerEntryForm({ onSuccess, onCancel, editingEntry, initialTagged
   const qc = useQueryClient()
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [selectedFriendIds, setSelectedFriendIds] = useState<string[]>([])
+  const [friendSearch, setFriendSearch] = useState('')
   const updateEntry = useUpdateEntry()
   const isEditing = !!editingEntry
 
@@ -181,6 +182,17 @@ export function BeerEntryForm({ onSuccess, onCancel, editingEntry, initialTagged
       prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
     ))
   }
+
+  const filteredTaggableFriends = useMemo(() => {
+    const all = taggableFriends ?? []
+    const q = friendSearch.trim().toLowerCase()
+    if (!q) return all
+    return all.filter((friend) => {
+      const name = (friend.display_name ?? '').toLowerCase()
+      const username = friend.username.toLowerCase()
+      return name.includes(q) || username.includes(q)
+    })
+  }, [friendSearch, taggableFriends])
 
   const mutation = useMutation({
     mutationFn: async (values: FormData) => {
@@ -345,26 +357,40 @@ export function BeerEntryForm({ onSuccess, onCancel, editingEntry, initialTagged
       <Textarea label="Notes" {...register('notes')} placeholder="What did you think?" rows={3} />
 
       <div className="flex flex-col gap-2">
-        <label className="text-sm font-medium text-slate-300">Drinking with</label>
+        <label className="text-sm font-medium text-slate-300">Drinking with (optional)</label>
+        <p className="text-xs text-slate-500">You can post without tagging anyone.</p>
         {!taggableFriends || taggableFriends.length === 0 ? (
           <p className="text-xs text-slate-500">No taggable friends yet. Add friends first.</p>
         ) : (
-          <div className="flex flex-wrap gap-2">
-            {taggableFriends.map((friend) => {
-              const selected = selectedFriendIds.includes(friend.id)
-              return (
-                <button
-                  key={friend.id}
-                  type="button"
-                  onClick={() => toggleTag(friend.id)}
-                  className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${selected
-                    ? 'border-amber-400 bg-amber-500/20 text-amber-300'
-                    : 'border-slate-600 bg-slate-800 text-slate-300 hover:border-slate-500'}`}
-                >
-                  {friend.display_name ?? friend.username}
-                </button>
-              )
-            })}
+          <div className="flex flex-col gap-2">
+            <input
+              type="text"
+              placeholder="Search friends..."
+              value={friendSearch}
+              onChange={(e) => setFriendSearch(e.target.value)}
+              className="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-400"
+            />
+            {filteredTaggableFriends.length === 0 ? (
+              <p className="text-xs text-slate-500">No friends match your search.</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {filteredTaggableFriends.map((friend) => {
+                  const selected = selectedFriendIds.includes(friend.id)
+                  return (
+                    <button
+                      key={friend.id}
+                      type="button"
+                      onClick={() => toggleTag(friend.id)}
+                      className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${selected
+                        ? 'border-amber-400 bg-amber-500/20 text-amber-300'
+                        : 'border-slate-600 bg-slate-800 text-slate-300 hover:border-slate-500'}`}
+                    >
+                      {friend.display_name ?? friend.username}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
           </div>
         )}
       </div>
