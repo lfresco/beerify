@@ -270,6 +270,22 @@ CREATE INDEX IF NOT EXISTS idx_comments_user  ON comments(user_id);
 CREATE TRIGGER comments_updated_at BEFORE UPDATE ON comments
   FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
 
+-- ──────────────────────────────────────────────────────────────
+-- BEER ENTRY TAGS (who you drank with)
+-- ──────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS beer_entry_tags (
+  id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  beer_entry_id   UUID        NOT NULL REFERENCES beer_entries(id) ON DELETE CASCADE,
+  tagged_user_id  UUID        NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  tagged_by_id    UUID        NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (beer_entry_id, tagged_user_id),
+  CHECK (tagged_user_id <> tagged_by_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_beer_entry_tags_entry ON beer_entry_tags(beer_entry_id);
+CREATE INDEX IF NOT EXISTS idx_beer_entry_tags_user  ON beer_entry_tags(tagged_user_id);
+
 -- =============================================================
 -- ROW LEVEL SECURITY
 -- =============================================================
@@ -285,6 +301,7 @@ ALTER TABLE beer_entries  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE photos        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE likes         ENABLE ROW LEVEL SECURITY;
 ALTER TABLE comments      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE beer_entry_tags ENABLE ROW LEVEL SECURITY;
 
 -- Helper: is the current user in the same group as a given user?
 CREATE OR REPLACE FUNCTION same_group(other_user_id UUID)
@@ -468,6 +485,36 @@ CREATE POLICY "comments_update" ON comments FOR UPDATE
 
 CREATE POLICY "comments_delete" ON comments FOR DELETE
   USING (user_id = auth.uid());
+
+-- ── Beer entry tags ─────────────────────────────────────────
+DROP POLICY IF EXISTS "entry_tags_read" ON beer_entry_tags;
+CREATE POLICY "entry_tags_read" ON beer_entry_tags FOR SELECT
+  TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "entry_tags_insert" ON beer_entry_tags;
+CREATE POLICY "entry_tags_insert" ON beer_entry_tags FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    tagged_by_id = auth.uid()
+    AND EXISTS (
+      SELECT 1 FROM beer_entries
+      WHERE id = beer_entry_tags.beer_entry_id
+        AND user_id = auth.uid()
+    )
+    AND same_group(tagged_user_id)
+  );
+
+DROP POLICY IF EXISTS "entry_tags_delete" ON beer_entry_tags;
+CREATE POLICY "entry_tags_delete" ON beer_entry_tags FOR DELETE
+  TO authenticated
+  USING (
+    tagged_by_id = auth.uid()
+    OR EXISTS (
+      SELECT 1 FROM beer_entries
+      WHERE id = beer_entry_tags.beer_entry_id
+        AND user_id = auth.uid()
+    )
+  );
 
 -- =============================================================
 -- STORAGE BUCKETS (run in Supabase Storage tab or via API)

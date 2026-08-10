@@ -13,7 +13,8 @@ export default function FeedPage() {
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null)
   const dialogRef = useRef<HTMLDialogElement>(null)
 
-  const editingEntry = data?.find((item) => item.entry.id === editingEntryId)?.entry ?? null
+  const editingItem = data?.find((item) => item.entry.id === editingEntryId) ?? null
+  const editingEntry = editingItem?.entry ?? null
 
   function openCreateForm() {
     setEditingEntryId(null)
@@ -127,6 +128,7 @@ export default function FeedPage() {
           {editingEntry && (
             <BeerEntryForm
               editingEntry={editingEntry}
+              initialTaggedUserIds={editingItem?.tags.map((tag) => tag.tagged_user_id) ?? []}
               onSuccess={handleFormSuccess}
               onCancel={closeEditModal}
             />

@@ -17,7 +17,7 @@ interface FeedCardProps {
 }
 
 export function FeedCard({ item, currentUserId, onEdit, onDelete }: FeedCardProps) {
-  const { entry, profile, style, photos, likes, comments, userHasLiked } = item
+  const { entry, profile, style, photos, likes, comments, tags, userHasLiked } = item
   const [showComments, setShowComments] = useState(false)
   const [commentText, setCommentText] = useState('')
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
@@ -104,6 +104,15 @@ export function FeedCard({ item, currentUserId, onEdit, onDelete }: FeedCardProp
         </div>
 
         {entry.notes && <p className="text-sm text-slate-300 leading-relaxed">{entry.notes}</p>}
+
+        {tags.length > 0 && (
+          <p className="text-xs text-slate-400">
+            With{' '}
+            {tags
+              .map((tag) => tag.taggedProfile?.display_name ?? tag.taggedProfile?.username ?? 'Unknown')
+              .join(', ')}
+          </p>
+        )}
 
         {/* Actions */}
         <div className="flex items-center gap-4 pt-1 border-t border-slate-700">

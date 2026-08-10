@@ -29,6 +29,7 @@ interface BeerEntryFormProps {
   onSuccess?: () => void
   onCancel?: () => void
   editingEntry?: FeedEntry['entry'] | null
+  initialTaggedUserIds?: string[]
 }
 
 function toDateTimeLocalValue(isoString: string) {
@@ -43,10 +44,11 @@ function nowDateTimeLocalValue() {
   return new Date(now.getTime() - tzOffsetMs).toISOString().slice(0, 16)
 }
 
-export function BeerEntryForm({ onSuccess, onCancel, editingEntry }: BeerEntryFormProps) {
+export function BeerEntryForm({ onSuccess, onCancel, editingEntry, initialTaggedUserIds = [] }: BeerEntryFormProps) {
   const user = useAuthStore((s) => s.user)
   const qc = useQueryClient()
   const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [selectedFriendIds, setSelectedFriendIds] = useState<string[]>([])
   const updateEntry = useUpdateEntry()
   const isEditing = !!editingEntry
 
@@ -70,6 +72,42 @@ export function BeerEntryForm({ onSuccess, onCancel, editingEntry }: BeerEntryFo
       return (data ?? []) as Pick<BeerBrand, 'id' | 'name' | 'brewery' | 'style_id'>[]
     },
     staleTime: 1000 * 60 * 10,
+  })
+
+  const { data: taggableFriends } = useQuery<
+    Array<{ id: string; username: string; display_name: string | null }>
+  >({
+    queryKey: ['taggable-friends', user?.id],
+    enabled: !!user,
+    staleTime: 1000 * 60 * 2,
+    queryFn: async () => {
+      const { data: groups, error: groupsError } = await supabase
+        .from('friend_groups')
+        .select('id')
+        .eq('owner_id', user!.id)
+        .eq('name', 'Friends')
+        .limit(1)
+
+      if (groupsError) throw groupsError
+
+      const personalGroupId = groups?.[0]?.id
+      if (!personalGroupId) return []
+
+      const { data: members, error: membersError } = await supabase
+        .from('group_members')
+        .select('user_id, profiles!inner(id, username, display_name)')
+        .eq('group_id', personalGroupId)
+
+      if (membersError) throw membersError
+
+      return (members ?? [])
+        .filter((m: any) => m.user_id !== user!.id)
+        .map((m: any) => ({
+          id: m.profiles.id,
+          username: m.profiles.username,
+          display_name: m.profiles.display_name,
+        }))
+    },
   })
 
   const {
@@ -98,6 +136,7 @@ export function BeerEntryForm({ onSuccess, onCancel, editingEntry }: BeerEntryFo
         notes: editingEntry.notes ?? '',
         tasted_at: toDateTimeLocalValue(editingEntry.tasted_at),
       })
+      setSelectedFriendIds(initialTaggedUserIds)
       return
     }
 
@@ -110,7 +149,14 @@ export function BeerEntryForm({ onSuccess, onCancel, editingEntry }: BeerEntryFo
       notes: '',
       tasted_at: nowDateTimeLocalValue(),
     })
-  }, [editingEntry, reset])
+    setSelectedFriendIds([])
+  }, [editingEntry, initialTaggedUserIds, reset])
+
+  function toggleTag(userId: string) {
+    setSelectedFriendIds((prev) => (
+      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
+    ))
+  }
 
   const mutation = useMutation({
     mutationFn: async (values: FormData) => {
@@ -126,6 +172,26 @@ export function BeerEntryForm({ onSuccess, onCancel, editingEntry }: BeerEntryFo
 
       if (editingEntry) {
         await updateEntry.mutateAsync({ id: editingEntry.id, values: payload })
+
+        await supabase
+          .from('beer_entry_tags')
+          .delete()
+          .eq('beer_entry_id', editingEntry.id)
+          .eq('tagged_by_id', user!.id)
+
+        if (selectedFriendIds.length > 0) {
+          const { error: tagsError } = await supabase
+            .from('beer_entry_tags')
+            .insert(
+              selectedFriendIds.map((friendId) => ({
+                beer_entry_id: editingEntry.id,
+                tagged_user_id: friendId,
+                tagged_by_id: user!.id,
+              })),
+            )
+          if (tagsError) throw tagsError
+        }
+
         return { id: editingEntry.id }
       }
 
@@ -150,6 +216,19 @@ export function BeerEntryForm({ onSuccess, onCancel, editingEntry }: BeerEntryFo
         })
       }
 
+      if (entry && selectedFriendIds.length > 0) {
+        const { error: tagsError } = await supabase
+          .from('beer_entry_tags')
+          .insert(
+            selectedFriendIds.map((friendId) => ({
+              beer_entry_id: entry.id,
+              tagged_user_id: friendId,
+              tagged_by_id: user!.id,
+            })),
+          )
+        if (tagsError) throw tagsError
+      }
+
       return entry
     },
     onSuccess: () => {
@@ -164,6 +243,7 @@ export function BeerEntryForm({ onSuccess, onCancel, editingEntry }: BeerEntryFo
           notes: '',
           tasted_at: nowDateTimeLocalValue(),
         })
+        setSelectedFriendIds([])
       }
       setPhotoFile(null)
       onSuccess?.()
@@ -239,6 +319,31 @@ export function BeerEntryForm({ onSuccess, onCancel, editingEntry }: BeerEntryFo
       </div>
 
       <Textarea label="Notes" {...register('notes')} placeholder="What did you think?" rows={3} />
+
+      <div className="flex flex-col gap-2">
+        <label className="text-sm font-medium text-slate-300">Drinking with</label>
+        {!taggableFriends || taggableFriends.length === 0 ? (
+          <p className="text-xs text-slate-500">No taggable friends yet. Add friends first.</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {taggableFriends.map((friend) => {
+              const selected = selectedFriendIds.includes(friend.id)
+              return (
+                <button
+                  key={friend.id}
+                  type="button"
+                  onClick={() => toggleTag(friend.id)}
+                  className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${selected
+                    ? 'border-amber-400 bg-amber-500/20 text-amber-300'
+                    : 'border-slate-600 bg-slate-800 text-slate-300 hover:border-slate-500'}`}
+                >
+                  {friend.display_name ?? friend.username}
+                </button>
+              )
+            })}
+          </div>
+        )}
+      </div>
 
       <Input
         label="Date tasted *"

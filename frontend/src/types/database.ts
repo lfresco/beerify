@@ -148,6 +148,17 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['comments']['Row'], 'id' | 'created_at' | 'updated_at'>
         Update: Partial<Database['public']['Tables']['comments']['Insert']>
       }
+      beer_entry_tags: {
+        Row: {
+          id: string
+          beer_entry_id: string
+          tagged_user_id: string
+          tagged_by_id: string
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['beer_entry_tags']['Row'], 'id' | 'created_at'>
+        Update: never
+      }
     }
     Views: Record<string, never>
     Functions: Record<string, never>
@@ -167,9 +178,14 @@ export type FriendRequest = Database['public']['Tables']['friend_requests']['Row
 export type Invite = Database['public']['Tables']['invites']['Row']
 export type Like = Database['public']['Tables']['likes']['Row']
 export type Comment = Database['public']['Tables']['comments']['Row']
+export type BeerEntryTag = Database['public']['Tables']['beer_entry_tags']['Row']
 
 export type FeedComment = Comment & {
   author: Pick<Profile, 'id' | 'username' | 'display_name' | 'avatar_url'> | null
+}
+
+export type FeedTag = BeerEntryTag & {
+  taggedProfile: Pick<Profile, 'id' | 'username' | 'display_name' | 'avatar_url'> | null
 }
 
 // Feed item: beer entry enriched with related data
@@ -181,5 +197,6 @@ export interface FeedEntry {
   photos: Photo[]
   likes: Like[]
   comments: FeedComment[]
+  tags: FeedTag[]
   userHasLiked: boolean
 }

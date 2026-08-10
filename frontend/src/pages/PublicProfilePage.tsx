@@ -38,7 +38,8 @@ export default function PublicProfilePage() {
           beer_brands(id, name),
           photos(id, storage_path),
           likes(user_id),
-          comments(id, beer_entry_id, user_id, content, created_at, updated_at, profiles(id, username, display_name, avatar_url))
+          comments(id, beer_entry_id, user_id, content, created_at, updated_at, profiles(id, username, display_name, avatar_url)),
+          beer_entry_tags(id, beer_entry_id, tagged_user_id, tagged_by_id, created_at, profiles!tagged_user_id(id, username, display_name, avatar_url))
         `)
         .eq('user_id', profileQuery.data!.id)
         .order('created_at', { ascending: false })
@@ -74,6 +75,14 @@ export default function PublicProfilePage() {
           created_at: comment.created_at,
           updated_at: comment.updated_at,
           author: comment.profiles ?? null,
+        })),
+        tags: (row.beer_entry_tags ?? []).map((tag: any) => ({
+          id: tag.id,
+          beer_entry_id: tag.beer_entry_id,
+          tagged_user_id: tag.tagged_user_id,
+          tagged_by_id: tag.tagged_by_id,
+          created_at: tag.created_at,
+          taggedProfile: tag.profiles ?? null,
         })),
         userHasLiked: (row.likes ?? []).some((l: any) => l.user_id === currentUser?.id),
       }))
