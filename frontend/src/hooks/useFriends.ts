@@ -49,8 +49,15 @@ export interface OwnedGroup {
  */
 export function useFriends() {
   const user = useAuthStore((s) => s.user)
-  const session = useAuthStore((s) => s.session)
   const qc = useQueryClient()
+
+  async function getAccessToken(): Promise<string> {
+    const { data, error } = await supabase.auth.getSession()
+    if (error || !data.session?.access_token) {
+      throw new Error('Your session expired. Please sign in again.')
+    }
+    return data.session.access_token
+  }
 
   const groups = useQuery({
     queryKey: ['friends', 'groups', user?.id],
@@ -91,20 +98,22 @@ export function useFriends() {
 
   const requests = useQuery({
     queryKey: ['friends', 'requests', user?.id],
-    enabled: !!user && !!session,
+    enabled: !!user,
     staleTime: 1000 * 30,
     queryFn: async () => {
-      return apiRequest<FriendRequestsResponse>('/friends/requests', {}, session!.access_token)
+      const token = await getAccessToken()
+      return apiRequest<FriendRequestsResponse>('/friends/requests', {}, token)
     },
   })
 
   const sendRequest = useMutation({
     mutationFn: async (profileId: string) => {
       if (profileId === user!.id) throw new Error("You can't add yourself")
+      const token = await getAccessToken()
       await apiRequest('/friends/requests', {
         method: 'POST',
         body: JSON.stringify({ recipient_id: profileId }),
-      }, session!.access_token)
+      }, token)
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['friends', 'requests'] })
@@ -113,9 +122,10 @@ export function useFriends() {
 
   const acceptRequest = useMutation({
     mutationFn: async (requestId: string) => {
+      const token = await getAccessToken()
       await apiRequest(`/friends/requests/${requestId}/accept`, {
         method: 'POST',
-      }, session!.access_token)
+      }, token)
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['friends', 'requests'] })
@@ -125,18 +135,20 @@ export function useFriends() {
 
   const declineRequest = useMutation({
     mutationFn: async (requestId: string) => {
+      const token = await getAccessToken()
       await apiRequest(`/friends/requests/${requestId}/decline`, {
         method: 'POST',
-      }, session!.access_token)
+      }, token)
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['friends', 'requests'] }),
   })
 
   const cancelRequest = useMutation({
     mutationFn: async (requestId: string) => {
+      const token = await getAccessToken()
       await apiRequest(`/friends/requests/${requestId}`, {
         method: 'DELETE',
-      }, session!.access_token)
+      }, token)
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['friends', 'requests'] }),
   })
