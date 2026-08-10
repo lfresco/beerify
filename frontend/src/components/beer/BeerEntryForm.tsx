@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import { apiRequest } from '@/lib/api'
 import { compressPhotoForUpload, uploadPhoto } from '@/lib/storage'
 import { useAuthStore } from '@/store/auth'
 import { useUpdateEntry } from '@/hooks/useFeed'
@@ -30,6 +31,23 @@ interface BeerEntryFormProps {
   onCancel?: () => void
   editingEntry?: FeedEntry['entry'] | null
   initialTaggedUserIds?: string[]
+}
+
+interface FriendRequestsResponse {
+  incoming: Array<{
+    id: string
+    requester_id: string
+    recipient_id: string
+    status: 'pending' | 'accepted' | 'rejected'
+    profiles: { id: string; username: string; display_name: string | null } | null
+  }>
+  outgoing: Array<{
+    id: string
+    requester_id: string
+    recipient_id: string
+    status: 'pending' | 'accepted' | 'rejected'
+    profiles: { id: string; username: string; display_name: string | null } | null
+  }>
 }
 
 function toDateTimeLocalValue(isoString: string) {
@@ -81,52 +99,34 @@ export function BeerEntryForm({ onSuccess, onCancel, editingEntry, initialTagged
     enabled: !!user,
     staleTime: 1000 * 60 * 2,
     queryFn: async () => {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError || !sessionData.session?.access_token) {
+        throw new Error('Your session expired. Please sign in again.')
+      }
+
+      const response = await apiRequest<FriendRequestsResponse>(
+        '/friends/requests',
+        {},
+        sessionData.session.access_token,
+      )
+
       const byId = new Map<string, { id: string; username: string; display_name: string | null }>()
 
-      const [{ data: incomingAccepted, error: incomingError }, { data: outgoingAccepted, error: outgoingError }] = await Promise.all([
-        supabase
-          .from('friend_requests')
-          .select('requester_id')
-          .eq('recipient_id', user!.id)
-          .eq('status', 'accepted'),
-        supabase
-          .from('friend_requests')
-          .select('recipient_id')
-          .eq('requester_id', user!.id)
-          .eq('status', 'accepted'),
-      ])
-
-      if (incomingError) throw incomingError
-      if (outgoingError) throw outgoingError
-
-      const friendIds = new Set<string>()
-
-      for (const request of incomingAccepted ?? []) {
-        if (request.requester_id && request.requester_id !== user!.id) {
-          friendIds.add(request.requester_id)
-        }
+      for (const request of response.incoming ?? []) {
+        if (request.status !== 'accepted' || !request.profiles) continue
+        byId.set(request.profiles.id, {
+          id: request.profiles.id,
+          username: request.profiles.username,
+          display_name: request.profiles.display_name,
+        })
       }
 
-      for (const request of outgoingAccepted ?? []) {
-        if (request.recipient_id && request.recipient_id !== user!.id) {
-          friendIds.add(request.recipient_id)
-        }
-      }
-
-      if (friendIds.size === 0) return []
-
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, username, display_name')
-        .in('id', Array.from(friendIds))
-
-      if (profilesError) throw profilesError
-
-      for (const profile of profiles ?? []) {
-        byId.set(profile.id, {
-          id: profile.id,
-          username: profile.username,
-          display_name: profile.display_name,
+      for (const request of response.outgoing ?? []) {
+        if (request.status !== 'accepted' || !request.profiles) continue
+        byId.set(request.profiles.id, {
+          id: request.profiles.id,
+          username: request.profiles.username,
+          display_name: request.profiles.display_name,
         })
       }
 

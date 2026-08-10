@@ -54,6 +54,35 @@ export function FriendsPanel() {
     [outgoingPending],
   )
 
+  const acceptedFriendsFallback = useMemo(() => {
+    const byId = new Map<string, { friendship_id: string; profile: Profile }>()
+
+    for (const request of requests.data?.incoming ?? []) {
+      if (request.status !== 'accepted') continue
+      if (!request.profiles) continue
+      byId.set(request.requester_id, {
+        friendship_id: request.id,
+        profile: request.profiles,
+      })
+    }
+
+    for (const request of requests.data?.outgoing ?? []) {
+      if (request.status !== 'accepted') continue
+      if (!request.profiles) continue
+      byId.set(request.recipient_id, {
+        friendship_id: request.id,
+        profile: request.profiles,
+      })
+    }
+
+    return Array.from(byId.values())
+  }, [requests.data])
+
+  const effectiveFriends = useMemo(
+    () => ((friends.data?.length ?? 0) > 0 ? friends.data! : acceptedFriendsFallback),
+    [friends.data, acceptedFriendsFallback],
+  )
+
   const acceptedConnectionIds = useMemo(() => {
     const ids = new Set<string>()
     for (const row of requests.data?.incoming ?? []) {
@@ -363,17 +392,17 @@ export function FriendsPanel() {
       {/* Existing friends */}
       <div className="flex flex-col gap-2">
         <h4 className="text-sm font-semibold text-slate-300">
-          Your friends ({friends.data?.length ?? 0})
+          Your friends ({effectiveFriends.length})
         </h4>
         {groups.isLoading || friends.isLoading ? (
           <p className="text-sm text-slate-400">Loading…</p>
-        ) : (friends.data ?? []).length === 0 ? (
+        ) : effectiveFriends.length === 0 ? (
           <p className="text-sm text-slate-400">
             No friends yet — search above and add someone.
           </p>
         ) : (
           <div className="flex flex-col gap-1">
-            {friends.data!.map((f) => (
+            {effectiveFriends.map((f) => (
               <UserRow
                 key={f.friendship_id}
                 profile={f.profile}
