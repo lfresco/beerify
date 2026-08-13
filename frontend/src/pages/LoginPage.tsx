@@ -31,23 +31,23 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[var(--bg)] flex items-center justify-center p-4">
       <div className="w-full max-w-sm flex flex-col gap-6">
         {/* Logo */}
         <div className="text-center">
           <div className="text-6xl mb-2">🍺</div>
           <h1 className="text-3xl font-bold text-amber-400">BeerLog</h1>
-          <p className="text-slate-400 text-sm mt-1">Track and share your beer adventures</p>
+          <p className="text-[var(--text-secondary)] text-sm mt-1">Track and share your beer adventures</p>
         </div>
 
-        <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 flex flex-col gap-4">
-          <div className="flex rounded-xl overflow-hidden border border-slate-600">
+        <div className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-2xl p-6 flex flex-col gap-4">
+          <div className="flex rounded-xl overflow-hidden border border-[var(--card-border)]">
             {(['login', 'signup'] as const).map((m) => (
               <button
                 key={m}
                 onClick={() => setMode(m)}
                 className={`flex-1 py-2 text-sm font-medium transition-colors capitalize
-                  ${mode === m ? 'bg-amber-500 text-slate-900' : 'text-slate-400 hover:text-slate-200'}`}
+                  ${mode === m ? 'bg-amber-500 text-slate-900' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
               >
                 {m === 'login' ? 'Sign in' : 'Sign up'}
               </button>

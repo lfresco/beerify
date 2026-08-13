@@ -27,7 +27,7 @@ export default function StatsPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
-      <h1 className="text-xl font-bold text-slate-100 mb-4">Group Stats</h1>
+      <h1 className="text-xl font-bold text-[var(--text-primary)] mb-4">Group Stats</h1>
 
       <div className="mb-6 flex flex-col gap-3">
         <div className="flex flex-wrap gap-2">

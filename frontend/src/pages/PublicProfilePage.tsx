@@ -151,14 +151,14 @@ export default function PublicProfilePage() {
   })
 
   if (profileQuery.isLoading) {
-    return <div className="max-w-xl mx-auto px-4 py-8 text-slate-400">Loading profile...</div>
+    return <div className="max-w-xl mx-auto px-4 py-8 text-[var(--text-secondary)]">Loading profile...</div>
   }
 
   if (!profileQuery.data) {
     return (
       <div className="max-w-xl mx-auto px-4 py-8">
         <Card className="p-5 text-center">
-          <p className="text-slate-300">User not found.</p>
+          <p className="text-[var(--text-secondary)]">User not found.</p>
           <Link to="/" className="text-amber-400 text-sm hover:underline mt-2 inline-block">Back to feed</Link>
         </Card>
       </div>
@@ -193,17 +193,17 @@ export default function PublicProfilePage() {
               className="w-16 h-16 rounded-full object-cover shrink-0"
             />
           ) : (
-            <div className="w-16 h-16 rounded-full bg-amber-500 flex items-center justify-center text-slate-900 text-2xl font-bold shrink-0">
+            <div className="w-16 h-16 rounded-full bg-amber-500 flex items-center justify-center text-black text-2xl font-bold shrink-0">
               {profile.display_name?.[0]?.toUpperCase() ?? profile.username?.[0]?.toUpperCase() ?? '?'}
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-bold text-slate-100">{profile.display_name ?? profile.username}</h1>
-            <p className="text-sm text-slate-400">@{profile.username}</p>
+            <h1 className="text-lg font-bold text-[var(--text-primary)]">{profile.display_name ?? profile.username}</h1>
+            <p className="text-sm text-[var(--text-secondary)]">@{profile.username}</p>
             {profile.created_at && (
-              <p className="text-xs text-slate-500 mt-1">Member since {format(new Date(profile.created_at), 'PPP')}</p>
+              <p className="text-xs text-[var(--text-dim)] mt-1">Member since {format(new Date(profile.created_at), 'PPP')}</p>
             )}
-            {profile.bio && <p className="text-sm text-slate-300 mt-2">{profile.bio}</p>}
+            {profile.bio && <p className="text-sm text-[var(--text-secondary)] mt-2">{profile.bio}</p>}
             {isSelf && (
               <Link to="/profile" className="text-amber-400 text-xs hover:underline mt-2 inline-block">
                 Edit your profile
@@ -235,7 +235,7 @@ export default function PublicProfilePage() {
                   </>
                 ) : outgoingRequest ? (
                   <>
-                    <span className="text-xs text-slate-300 bg-slate-800 border border-slate-600 px-2 py-1 rounded-full">
+                    <span className="text-xs text-[var(--text-secondary)] bg-[var(--card-bg)] border border-[var(--card-border)] px-2 py-1 rounded-full">
                       Request pending
                     </span>
                     <Button
@@ -266,39 +266,39 @@ export default function PublicProfilePage() {
       </Card>
 
       <Card className="p-5">
-        <h2 className="text-base font-semibold text-slate-100 mb-3">User stats</h2>
+        <h2 className="text-base font-semibold text-[var(--text-primary)] mb-3">User stats</h2>
         {statsQuery.isLoading ? (
-          <p className="text-sm text-slate-400">Loading stats...</p>
+          <p className="text-sm text-[var(--text-secondary)]">Loading stats...</p>
         ) : statsQuery.error ? (
           <p className="text-sm text-red-400">Failed to load stats.</p>
         ) : (
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-3">
-              <p className="text-xs text-slate-400">Beers logged</p>
+            <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-3">
+              <p className="text-xs text-[var(--text-secondary)]">Beers logged</p>
               <p className="text-2xl font-bold text-amber-400">{statsQuery.data?.totalBeers ?? 0}</p>
             </div>
-            <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-3">
-              <p className="text-xs text-slate-400">Average rating</p>
+            <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-3">
+              <p className="text-xs text-[var(--text-secondary)]">Average rating</p>
               <p className="text-2xl font-bold text-amber-400">{(statsQuery.data?.avgRating ?? 0).toFixed(1)}</p>
             </div>
-            <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-3">
-              <p className="text-xs text-slate-400">Styles tried</p>
+            <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-3">
+              <p className="text-xs text-[var(--text-secondary)]">Styles tried</p>
               <p className="text-2xl font-bold text-amber-400">{statsQuery.data?.stylesTried ?? 0}</p>
             </div>
-            <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-3">
-              <p className="text-xs text-slate-400">Active months</p>
+            <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-3">
+              <p className="text-xs text-[var(--text-secondary)]">Active months</p>
               <p className="text-2xl font-bold text-amber-400">{statsQuery.data?.activeMonths ?? 0}</p>
             </div>
           </div>
         )}
       </Card>
 
-      <h2 className="text-base font-semibold text-slate-200">Recent beers</h2>
+      <h2 className="text-base font-semibold text-[var(--text-primary)]">Recent beers</h2>
 
-      {entriesQuery.isLoading && <p className="text-sm text-slate-400">Loading beers...</p>}
+      {entriesQuery.isLoading && <p className="text-sm text-[var(--text-secondary)]">Loading beers...</p>}
       {entriesQuery.error && <p className="text-sm text-red-400">Failed to load entries.</p>}
       {!entriesQuery.isLoading && (entriesQuery.data?.length ?? 0) === 0 && (
-        <Card className="p-4 text-sm text-slate-400">No beers logged yet.</Card>
+        <Card className="p-4 text-sm text-[var(--text-secondary)]">No beers logged yet.</Card>
       )}
 
       {entriesQuery.data?.map((item) => (

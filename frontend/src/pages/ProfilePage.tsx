@@ -45,7 +45,7 @@ export default function ProfilePage() {
               className="w-16 h-16 rounded-full object-cover shrink-0"
             />
           ) : (
-            <div className="w-16 h-16 rounded-full bg-amber-500 flex items-center justify-center text-slate-900 text-2xl font-bold shrink-0">
+            <div className="w-16 h-16 rounded-full bg-amber-500 flex items-center justify-center text-black text-2xl font-bold shrink-0">
               {profile?.display_name?.[0]?.toUpperCase() ?? '?'}
             </div>
           )}
@@ -70,13 +70,13 @@ export default function ProfilePage() {
               </div>
             ) : (
               <>
-                <h2 className="text-lg font-bold text-slate-100">{profile?.display_name ?? profile?.username}</h2>
-                <p className="text-sm text-slate-400">@{profile?.username}</p>
-                {user?.email && <p className="text-sm text-slate-400">{user.email}</p>}
+                <h2 className="text-lg font-bold text-[var(--text-primary)]">{profile?.display_name ?? profile?.username}</h2>
+                <p className="text-sm text-[var(--text-secondary)]">@{profile?.username}</p>
+                {user?.email && <p className="text-sm text-[var(--text-secondary)]">{user.email}</p>}
                 {profile?.created_at && (
-                  <p className="text-xs text-slate-500 mt-1">Member since {format(new Date(profile.created_at), 'PPP')}</p>
+                  <p className="text-xs text-[var(--text-dim)] mt-1">Member since {format(new Date(profile.created_at), 'PPP')}</p>
                 )}
-                {profile?.bio && <p className="text-sm text-slate-300 mt-1">{profile.bio}</p>}
+                {profile?.bio && <p className="text-sm text-[var(--text-secondary)] mt-1">{profile.bio}</p>}
                 <button onClick={() => setEditing(true)} className="text-xs text-amber-400 hover:underline mt-2">Edit profile</button>
               </>
             )}
@@ -85,35 +85,35 @@ export default function ProfilePage() {
       </Card>
 
       <Card className="p-5">
-        <h3 className="text-base font-semibold text-slate-100 mb-4">Personal statistics</h3>
+        <h3 className="text-base font-semibold text-[var(--text-primary)] mb-4">Personal statistics</h3>
         {myStats.isLoading ? (
-          <p className="text-sm text-slate-400">Loading your stats…</p>
+          <p className="text-sm text-[var(--text-secondary)]">Loading your stats…</p>
         ) : myStats.error ? (
           <p className="text-sm text-red-400">Failed to load personal stats.</p>
         ) : (
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-3">
-              <p className="text-xs text-slate-400">Beers logged</p>
+            <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-3">
+              <p className="text-xs text-[var(--text-secondary)]">Beers logged</p>
               <p className="text-2xl font-bold text-amber-400">{myStats.data?.totalBeers ?? 0}</p>
             </div>
-            <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-3">
-              <p className="text-xs text-slate-400">Average rating</p>
+            <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-3">
+              <p className="text-xs text-[var(--text-secondary)]">Average rating</p>
               <p className="text-2xl font-bold text-amber-400">{(myStats.data?.avgRating ?? 0).toFixed(1)}</p>
             </div>
-            <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-3">
-              <p className="text-xs text-slate-400">Styles tried</p>
+            <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-3">
+              <p className="text-xs text-[var(--text-secondary)]">Styles tried</p>
               <p className="text-2xl font-bold text-amber-400">{myStats.data?.stylesTried ?? 0}</p>
             </div>
-            <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-3">
-              <p className="text-xs text-slate-400">Groups joined</p>
+            <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-3">
+              <p className="text-xs text-[var(--text-secondary)]">Groups joined</p>
               <p className="text-2xl font-bold text-amber-400">{myStats.data?.groupsJoined ?? 0}</p>
             </div>
-            <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-3">
-              <p className="text-xs text-slate-400">Groups owned</p>
+            <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-3">
+              <p className="text-xs text-[var(--text-secondary)]">Groups owned</p>
               <p className="text-2xl font-bold text-amber-400">{myStats.data?.groupsOwned ?? 0}</p>
             </div>
-            <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-3">
-              <p className="text-xs text-slate-400">Active months</p>
+            <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-3">
+              <p className="text-xs text-[var(--text-secondary)]">Active months</p>
               <p className="text-2xl font-bold text-amber-400">{myStats.data?.monthlyTrend.length ?? 0}</p>
             </div>
           </div>

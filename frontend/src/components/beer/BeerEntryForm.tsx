@@ -553,12 +553,12 @@ export function BeerEntryForm({ onSuccess, onCancel, editingEntry, initialTagged
     <form onSubmit={handleSubmit((v) => mutation.mutate(v))} className="flex flex-col gap-4">
       {/* Beer name with brands autocomplete */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium text-slate-300">Beer name *</label>
+        <label className="text-sm font-medium text-[var(--text-secondary)]">Beer name *</label>
         <input
           {...register('name')}
           list="brands-list"
           placeholder="e.g. Leffe Blonde"
-          className="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-400"
+          className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl px-3 py-2 text-[var(--text-primary)] placeholder-[var(--text-dim)] focus:outline-none focus:ring-2 focus:ring-amber-400"
           onChange={(e) => {
             register('name').onChange(e)
             const match = brands?.find((b) => b.name === e.target.value)
@@ -582,10 +582,10 @@ export function BeerEntryForm({ onSuccess, onCancel, editingEntry, initialTagged
 
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-slate-300">Style</label>
+          <label className="text-sm font-medium text-[var(--text-secondary)]">Style</label>
           <select
             onChange={(e) => setValue('style_id', e.target.value ? Number(e.target.value) : undefined)}
-            className="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
+            className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-amber-400"
           >
             <option value="">Select style…</option>
             {styles?.map((s) => (
@@ -596,19 +596,19 @@ export function BeerEntryForm({ onSuccess, onCancel, editingEntry, initialTagged
           </select>
         </div>
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-slate-300">ABV (%)</label>
+          <label className="text-sm font-medium text-[var(--text-secondary)]">ABV (%)</label>
           <input
             type="number"
             step="0.1"
             placeholder="5.0"
             onChange={(e) => setValue('abv', e.target.value ? Number(e.target.value) : undefined)}
-            className="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-400"
+            className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl px-3 py-2 text-[var(--text-primary)] placeholder-[var(--text-dim)] focus:outline-none focus:ring-2 focus:ring-amber-400"
           />
         </div>
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium text-slate-300">Rating *</label>
+        <label className="text-sm font-medium text-[var(--text-secondary)]">Rating *</label>
         <Controller
           name="rating"
           control={control}
@@ -619,8 +619,8 @@ export function BeerEntryForm({ onSuccess, onCancel, editingEntry, initialTagged
 
       <Textarea label="Notes" {...register('notes')} placeholder="What did you think?" rows={3} />
 
-      <div className="flex flex-col gap-2 rounded-xl border border-slate-700 bg-slate-800/40 p-3">
-        <label className="text-sm font-medium text-slate-300">Where are you drinking? (optional)</label>
+      <div className="flex flex-col gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-3">
+        <label className="text-sm font-medium text-[var(--text-secondary)]">Where are you drinking? (optional)</label>
 
         <div className="flex flex-wrap gap-2">
           {([
@@ -640,7 +640,7 @@ export function BeerEntryForm({ onSuccess, onCancel, editingEntry, initialTagged
                 }}
                 className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${selected
                   ? 'border-amber-400 bg-amber-500/20 text-amber-300'
-                  : 'border-slate-600 bg-slate-800 text-slate-300 hover:border-slate-500'}`}
+                  : 'border-[var(--card-border)] bg-[var(--card-bg)] text-[var(--text-secondary)] hover:border-[var(--text-dim)]'}`}
               >
                 {mode.label}
               </button>
@@ -659,13 +659,13 @@ export function BeerEntryForm({ onSuccess, onCancel, editingEntry, initialTagged
                 setSelectedPlace(null)
                 setLocationError(null)
               }}
-              className="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-400"
+              className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-dim)] focus:outline-none focus:ring-2 focus:ring-amber-400"
             />
 
-            {locationLoading && <p className="text-xs text-slate-500">Searching places...</p>}
+            {locationLoading && <p className="text-xs text-[var(--text-dim)]">Searching places...</p>}
 
             {!locationLoading && placeQuery.trim().length >= 3 && placeResults.length > 0 && (
-              <div className="max-h-40 overflow-y-auto rounded-lg border border-slate-700 bg-slate-900/60">
+              <div className="max-h-40 overflow-y-auto rounded-lg border border-[var(--card-border)] bg-[var(--bg)]">
                 {placeResults.map((place) => (
                   <button
                     key={`${place.provider}:${place.placeId}`}
@@ -677,7 +677,7 @@ export function BeerEntryForm({ onSuccess, onCancel, editingEntry, initialTagged
                       setGeoCoords({ latitude: place.latitude, longitude: place.longitude })
                       setPlaceResults([])
                     }}
-                    className="w-full text-left px-3 py-2 text-xs text-slate-200 hover:bg-slate-700/60 border-b border-slate-800 last:border-b-0"
+                    className="w-full text-left px-3 py-2 text-xs text-[var(--text-primary)] hover:bg-[var(--card-bg)] border-b border-[var(--divider)] last:border-b-0"
                   >
                     {place.placeName}
                   </button>
@@ -686,7 +686,7 @@ export function BeerEntryForm({ onSuccess, onCancel, editingEntry, initialTagged
             )}
 
             {!locationLoading && placeQuery.trim().length >= 3 && placeResults.length === 0 && !selectedPlace && (
-              <p className="text-xs text-slate-500">No places found. Try a broader query.</p>
+              <p className="text-xs text-[var(--text-dim)]">No places found. Try a broader query.</p>
             )}
 
             {selectedPlace && (
@@ -705,13 +705,13 @@ export function BeerEntryForm({ onSuccess, onCancel, editingEntry, initialTagged
                 placeholder="City"
                 value={cityInput}
                 onChange={(e) => setCityInput(e.target.value)}
-                className="flex-1 bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                className="flex-1 bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-dim)] focus:outline-none focus:ring-2 focus:ring-amber-400"
               />
               <Button type="button" size="sm" variant="ghost" onClick={() => void useCurrentCity()} loading={locationLoading}>
                 Use my location
               </Button>
             </div>
-            <p className="text-xs text-slate-500">You can fill city manually if geolocation is unavailable.</p>
+            <p className="text-xs text-[var(--text-dim)]">You can fill city manually if geolocation is unavailable.</p>
           </div>
         )}
 
@@ -719,10 +719,10 @@ export function BeerEntryForm({ onSuccess, onCancel, editingEntry, initialTagged
       </div>
 
       <div className="flex flex-col gap-2">
-        <label className="text-sm font-medium text-slate-300">Drinking with (optional)</label>
-        <p className="text-xs text-slate-500">You can post without tagging anyone.</p>
+        <label className="text-sm font-medium text-[var(--text-secondary)]">Drinking with (optional)</label>
+        <p className="text-xs text-[var(--text-dim)]">You can post without tagging anyone.</p>
         {!taggableFriends || taggableFriends.length === 0 ? (
-          <p className="text-xs text-slate-500">No taggable friends yet. Add friends first.</p>
+          <p className="text-xs text-[var(--text-dim)]">No taggable friends yet. Add friends first.</p>
         ) : (
           <div className="flex flex-col gap-2">
             <input
@@ -730,10 +730,10 @@ export function BeerEntryForm({ onSuccess, onCancel, editingEntry, initialTagged
               placeholder="Search friends..."
               value={friendSearch}
               onChange={(e) => setFriendSearch(e.target.value)}
-              className="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-400"
+              className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-dim)] focus:outline-none focus:ring-2 focus:ring-amber-400"
             />
             {filteredTaggableFriends.length === 0 ? (
-              <p className="text-xs text-slate-500">No friends match your search.</p>
+              <p className="text-xs text-[var(--text-dim)]">No friends match your search.</p>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {filteredTaggableFriends.map((friend) => {
@@ -745,7 +745,7 @@ export function BeerEntryForm({ onSuccess, onCancel, editingEntry, initialTagged
                       onClick={() => toggleTag(friend.id)}
                       className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${selected
                         ? 'border-amber-400 bg-amber-500/20 text-amber-300'
-                        : 'border-slate-600 bg-slate-800 text-slate-300 hover:border-slate-500'}`}
+                        : 'border-[var(--card-border)] bg-[var(--card-bg)] text-[var(--text-secondary)] hover:border-[var(--text-dim)]'}`}
                     >
                       {friend.display_name ?? friend.username}
                     </button>
@@ -765,7 +765,7 @@ export function BeerEntryForm({ onSuccess, onCancel, editingEntry, initialTagged
       />
 
       <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium text-slate-300">Photo</label>
+        <label className="text-sm font-medium text-[var(--text-secondary)]">Photo</label>
         <PhotoDropzone onFile={setPhotoFile} />
       </div>
 

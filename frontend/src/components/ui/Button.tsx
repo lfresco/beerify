@@ -11,8 +11,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const base = 'inline-flex items-center justify-center font-semibold rounded-xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 disabled:opacity-50 disabled:cursor-not-allowed'
     const variants = {
       primary: 'bg-amber-500 hover:bg-amber-400 text-slate-900',
-      secondary: 'bg-slate-700 hover:bg-slate-600 text-slate-100',
-      ghost: 'hover:bg-slate-700 text-slate-300',
+      secondary: 'bg-[var(--card-bg)] hover:bg-[var(--card-border)] text-[var(--text-primary)] border border-[var(--card-border)]',
+      ghost: 'hover:bg-[var(--card-bg)] text-[var(--text-secondary)]',
       danger: 'bg-red-600 hover:bg-red-500 text-white',
     }
     const sizes = {

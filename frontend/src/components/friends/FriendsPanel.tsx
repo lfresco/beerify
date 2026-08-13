@@ -123,26 +123,26 @@ export function FriendsPanel() {
   return (
     <Card className="p-5 flex flex-col gap-4">
       <div>
-        <h3 className="text-lg font-bold text-slate-100">Friends</h3>
-        <p className="text-sm text-slate-400">
+        <h3 className="text-lg font-bold text-[var(--text-primary)]">Friends</h3>
+        <p className="text-sm text-[var(--text-secondary)]">
           Send requests, accept incoming ones, and optionally organize friends into groups.
         </p>
       </div>
 
       {/* Groups */}
       <div className="flex flex-col gap-3">
-        <h4 className="text-sm font-semibold text-slate-300">
+        <h4 className="text-sm font-semibold text-[var(--text-secondary)]">
           Your groups ({groups.data?.length ?? 0})
         </h4>
 
         {groups.isLoading ? (
-          <p className="text-sm text-slate-400">Loading groups...</p>
+          <p className="text-sm text-[var(--text-secondary)]">Loading groups...</p>
         ) : (
           <div className="flex flex-col gap-2">
             {(groups.data ?? []).map((g) => {
               const isEditing = editingGroupId === g.id
               return (
-                <div key={g.id} className="rounded-xl border border-slate-700 bg-slate-800/60 p-3 flex flex-col gap-2">
+                <div key={g.id} className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-3 flex flex-col gap-2">
                   {isEditing ? (
                     <>
                       <Input
@@ -189,13 +189,13 @@ export function FriendsPanel() {
                         {g.group_image_url ? (
                           <img src={g.group_image_url} alt={g.name} className="w-10 h-10 rounded-full object-cover" />
                         ) : (
-                          <div className="w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center text-slate-900 font-bold text-sm">
+                          <div className="w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center text-black font-bold text-sm">
                             {g.name[0]?.toUpperCase() ?? '?'}
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-slate-100">{g.name}</p>
-                          {g.description && <p className="text-xs text-slate-400 mt-0.5">{g.description}</p>}
+                          <p className="text-sm font-semibold text-[var(--text-primary)]">{g.name}</p>
+                          {g.description && <p className="text-xs text-[var(--text-secondary)] mt-0.5">{g.description}</p>}
                           {g.id === group?.id && <p className="text-xs text-amber-400 mt-1">Default group</p>}
                         </div>
                         <Button
@@ -214,8 +214,8 @@ export function FriendsPanel() {
           </div>
         )}
 
-        <div className="rounded-xl border border-slate-700 bg-slate-800/60 p-3 flex flex-col gap-2">
-          <p className="text-sm font-semibold text-slate-200">Create a new group</p>
+        <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-3 flex flex-col gap-2">
+          <p className="text-sm font-semibold text-[var(--text-primary)]">Create a new group</p>
           <Input
             label="Group name"
             value={newGroupName}
@@ -259,13 +259,13 @@ export function FriendsPanel() {
 
       {/* Incoming requests */}
       <div className="flex flex-col gap-2">
-        <h4 className="text-sm font-semibold text-slate-300">
+        <h4 className="text-sm font-semibold text-[var(--text-secondary)]">
           Incoming requests ({incomingPending.length})
         </h4>
         {requests.isLoading ? (
-          <p className="text-sm text-slate-400">Loading requests...</p>
+          <p className="text-sm text-[var(--text-secondary)]">Loading requests...</p>
         ) : incomingPending.length === 0 ? (
-          <p className="text-sm text-slate-400">No incoming requests.</p>
+          <p className="text-sm text-[var(--text-secondary)]">No incoming requests.</p>
         ) : (
           <div className="flex flex-col gap-1">
             {incomingPending.map((r) => (
@@ -299,13 +299,13 @@ export function FriendsPanel() {
 
       {/* Outgoing requests */}
       <div className="flex flex-col gap-2">
-        <h4 className="text-sm font-semibold text-slate-300">
+        <h4 className="text-sm font-semibold text-[var(--text-secondary)]">
           Sent requests ({outgoingPending.length})
         </h4>
         {requests.isLoading ? (
-          <p className="text-sm text-slate-400">Loading requests...</p>
+          <p className="text-sm text-[var(--text-secondary)]">Loading requests...</p>
         ) : outgoingPending.length === 0 ? (
-          <p className="text-sm text-slate-400">No pending sent requests.</p>
+          <p className="text-sm text-[var(--text-secondary)]">No pending sent requests.</p>
         ) : (
           <div className="flex flex-col gap-1">
             {outgoingPending.map((r) => (
@@ -339,10 +339,10 @@ export function FriendsPanel() {
         {q.trim().length >= 2 && (
           <div className="flex flex-col gap-1 max-h-56 overflow-y-auto">
             {search.isLoading && (
-              <p className="text-sm text-slate-400 py-2">Searching…</p>
+              <p className="text-sm text-[var(--text-secondary)] py-2">Searching…</p>
             )}
             {!search.isLoading && (search.data ?? []).length === 0 && (
-              <p className="text-sm text-slate-400 py-2">No matches.</p>
+              <p className="text-sm text-[var(--text-secondary)] py-2">No matches.</p>
             )}
             {(search.data ?? []).map((p: Profile) => (
               <UserRow
@@ -350,11 +350,11 @@ export function FriendsPanel() {
                 profile={p}
                 right={
                   connectedIds.has(p.id) ? (
-                    <span className="text-xs text-slate-500">Added</span>
+                    <span className="text-xs text-[var(--text-dim)]">Added</span>
                   ) : incomingRequesterIds.has(p.id) ? (
-                    <span className="text-xs text-slate-500">Requested you</span>
+                    <span className="text-xs text-[var(--text-dim)]">Requested you</span>
                   ) : outgoingRecipientIds.has(p.id) ? (
-                    <span className="text-xs text-slate-500">Pending</span>
+                    <span className="text-xs text-[var(--text-dim)]">Pending</span>
                   ) : (
                     <Button
                       size="sm"
@@ -391,13 +391,13 @@ export function FriendsPanel() {
 
       {/* Existing friends */}
       <div className="flex flex-col gap-2">
-        <h4 className="text-sm font-semibold text-slate-300">
+        <h4 className="text-sm font-semibold text-[var(--text-secondary)]">
           Your friends ({effectiveFriends.length})
         </h4>
         {groups.isLoading || friends.isLoading ? (
-          <p className="text-sm text-slate-400">Loading…</p>
+          <p className="text-sm text-[var(--text-secondary)]">Loading…</p>
         ) : effectiveFriends.length === 0 ? (
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-[var(--text-secondary)]">
             No friends yet — search above and add someone.
           </p>
         ) : (
@@ -429,14 +429,14 @@ function UserRow({ profile, right }: { profile: Profile; right: React.ReactNode 
   const initial = (profile.display_name ?? profile.username ?? '?')[0]?.toUpperCase()
   return (
     <div className="flex items-center gap-3 py-1.5">
-      <div className="w-9 h-9 rounded-full bg-amber-500 flex items-center justify-center text-slate-900 text-sm font-bold shrink-0">
+      <div className="w-9 h-9 rounded-full bg-amber-500 flex items-center justify-center text-black text-sm font-bold shrink-0">
         {initial}
       </div>
       <div className="flex-1 min-w-0">
-        <div className="text-sm font-medium text-slate-100 truncate">
+        <div className="text-sm font-medium text-[var(--text-primary)] truncate">
           {profile.display_name ?? profile.username}
         </div>
-        <div className="text-xs text-slate-400 truncate">@{profile.username}</div>
+        <div className="text-xs text-[var(--text-secondary)] truncate">@{profile.username}</div>
       </div>
       {right}
     </div>
