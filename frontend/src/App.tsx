@@ -41,7 +41,7 @@ function AppRoutes() {
 
   return (
     <>
-      <main className="pb-20">
+      <main className="pb-20 md:pb-0 md:pt-12">
         <Routes>
           <Route path="/" element={<FeedPage />} />
           <Route path="/stats" element={<StatsPage />} />

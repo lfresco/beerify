@@ -1,0 +1,552 @@
+<!--
+  DESIGN RATIONALE — Minimal Mono
+  Typography: Inter (single weight range), size scale drives all hierarchy — no color, no icons as decoration.
+  Color logic: Pure black (#111), mid-grays (#666, #999), off-white (#f7f7f7), white. Zero hue.
+  Spacing system: 8px base unit, generous padding, borders (1px solid #ddd) replace shadows/fills entirely.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BeerLog — Minimal Mono</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #f7f7f7;
+    color: #111;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* ── Layout ── */
+  .app {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    grid-template-rows: 56px 1fr;
+    height: 100vh;
+    max-width: 1280px;
+    margin: 0 auto;
+    background: #fff;
+    border-left: 1px solid #ddd;
+    border-right: 1px solid #ddd;
+  }
+
+  /* ── Header ── */
+  .header {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    border-bottom: 1px solid #ddd;
+    background: #fff;
+  }
+  .header-logo {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  .header-logo span { font-weight: 300; }
+  .header-nav {
+    display: flex;
+    gap: 24px;
+    font-size: 13px;
+    color: #666;
+  }
+  .header-nav a { text-decoration: none; color: inherit; }
+  .header-nav a.active { color: #111; font-weight: 500; }
+  .header-user {
+    font-size: 13px;
+    color: #666;
+  }
+
+  /* ── Left column: Beer Log Card + Log Action ── */
+  .left {
+    border-right: 1px solid #ddd;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Beer log card */
+  .beer-card {
+    padding: 32px 28px 24px;
+    border-bottom: 1px solid #ddd;
+  }
+  .beer-photo {
+    width: 100%;
+    aspect-ratio: 4/3;
+    background: #eee;
+    border: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #bbb;
+    font-size: 13px;
+    margin-bottom: 20px;
+    position: relative;
+  }
+  .beer-photo-label {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    font-size: 11px;
+    color: #999;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .beer-style-tag {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #999;
+    margin-bottom: 6px;
+  }
+  .beer-name {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1.2;
+    margin-bottom: 4px;
+  }
+  .beer-brewery {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 12px;
+  }
+  .beer-meta {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: #999;
+    margin-bottom: 16px;
+  }
+  .beer-meta span { display: flex; align-items: center; gap: 4px; }
+  .beer-rating {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .stars {
+    display: flex;
+    gap: 2px;
+  }
+  .star {
+    width: 18px;
+    height: 18px;
+    background: #111;
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  }
+  .star.empty {
+    background: #ddd;
+  }
+  .rating-label { font-size: 12px; color: #666; }
+  .beer-note {
+    font-size: 14px;
+    color: #444;
+    line-height: 1.6;
+    border-left: 2px solid #ddd;
+    padding-left: 12px;
+  }
+  .social-line {
+    margin-top: 12px;
+    font-size: 12px;
+    color: #999;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .avatars {
+    display: flex;
+  }
+  .avatar-sm {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #ccc;
+    border: 2px solid #fff;
+    margin-left: -6px;
+    font-size: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 600;
+  }
+  .avatar-sm:first-child { margin-left: 0; }
+
+  /* Log action area */
+  .log-action {
+    padding: 20px 28px;
+    flex: 1;
+  }
+  .log-action-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #999;
+    margin-bottom: 16px;
+  }
+  .field {
+    margin-bottom: 14px;
+  }
+  .field label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #999;
+    margin-bottom: 5px;
+  }
+  .field input, .field textarea, .field select {
+    width: 100%;
+    border: 1px solid #ddd;
+    background: #fff;
+    padding: 8px 10px;
+    font-family: inherit;
+    font-size: 14px;
+    color: #111;
+    outline: none;
+    resize: none;
+  }
+  .field input:focus, .field textarea:focus, .field select:focus {
+    border-color: #999;
+  }
+  .field textarea { height: 64px; }
+
+  .rating-input {
+    display: flex;
+    gap: 4px;
+  }
+  .rating-input button {
+    width: 32px;
+    height: 32px;
+    border: 1px solid #ddd;
+    background: #fff;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+  .rating-input button.sel {
+    background: #111;
+    color: #fff;
+    border-color: #111;
+  }
+
+  .btn-log {
+    width: 100%;
+    padding: 11px;
+    background: #111;
+    color: #fff;
+    border: none;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+  .btn-log:hover { background: #333; }
+
+  /* ── Right column: Friends feed ── */
+  .right {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .feed-header {
+    padding: 20px 28px 14px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+  .feed-title {
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .feed-count {
+    font-size: 12px;
+    color: #999;
+  }
+  .feed {
+    overflow-y: auto;
+    flex: 1;
+  }
+  .feed-item {
+    display: grid;
+    grid-template-columns: 64px 1fr;
+    gap: 0;
+    border-bottom: 1px solid #ddd;
+    padding: 16px 28px;
+  }
+  .feed-item:hover { background: #f7f7f7; }
+  .feed-thumb {
+    width: 56px;
+    height: 56px;
+    background: #eee;
+    border: 1px solid #ddd;
+    flex-shrink: 0;
+  }
+  .feed-body { }
+  .feed-friend {
+    font-size: 12px;
+    font-weight: 500;
+    margin-bottom: 2px;
+  }
+  .feed-beer-name {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 2px;
+  }
+  .feed-brewery {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 6px;
+  }
+  .feed-stars { display: flex; gap: 2px; margin-bottom: 6px; }
+  .feed-star {
+    width: 12px;
+    height: 12px;
+    background: #111;
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  }
+  .feed-star.empty { background: #ddd; }
+  .feed-note {
+    font-size: 13px;
+    color: #555;
+    line-height: 1.5;
+    margin-bottom: 6px;
+  }
+  .feed-meta {
+    display: flex;
+    gap: 12px;
+    font-size: 11px;
+    color: #bbb;
+  }
+  .feed-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #bbb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+    flex-shrink: 0;
+    align-self: flex-start;
+    margin-top: 2px;
+    margin-right: 12px;
+  }
+  .feed-item-inner {
+    display: flex;
+    gap: 0;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-logo">Beer<span>Log</span></div>
+    <nav class="header-nav">
+      <a href="#" class="active">My Log</a>
+      <a href="#">Friends</a>
+      <a href="#">Explore</a>
+      <a href="#">Stats</a>
+    </nav>
+    <div class="header-user">alice</div>
+  </header>
+
+  <!-- Left: Beer card + log action -->
+  <aside class="left">
+    <div class="beer-card">
+      <div class="beer-photo">
+        <div class="beer-photo-label">Photo</div>
+        <!-- placeholder beer illustration via unicode -->
+        <span style="font-size:48px;opacity:.2">🍺</span>
+      </div>
+      <div class="beer-style-tag">Imperial Stout · 11.2% ABV</div>
+      <div class="beer-name">Darkness</div>
+      <div class="beer-brewery">Surly Brewing Co. — Minneapolis, MN</div>
+      <div class="beer-meta">
+        <span>📍 Birreria Roma, Rome</span>
+        <span>3 friends also tried this</span>
+      </div>
+      <div class="beer-rating">
+        <div class="stars">
+          <div class="star"></div>
+          <div class="star"></div>
+          <div class="star"></div>
+          <div class="star"></div>
+          <div class="star empty"></div>
+        </div>
+        <span class="rating-label">4 / 5</span>
+      </div>
+      <div class="beer-note">
+        Roasted coffee and dark chocolate up front, with a velvet mouthfeel and subtle vanilla warmth in the finish. Pours jet black with a thin tan head.
+      </div>
+      <div class="social-line">
+        <div class="avatars">
+          <div class="avatar-sm">B</div>
+          <div class="avatar-sm">C</div>
+          <div class="avatar-sm">D</div>
+        </div>
+        <span>Bob, Carol +1 also logged this · 2h ago</span>
+      </div>
+    </div>
+
+    <!-- Log action area -->
+    <div class="log-action">
+      <div class="log-action-title">Log a Beer</div>
+      <div class="field">
+        <label>Beer Name</label>
+        <input type="text" placeholder="e.g. Punk IPA">
+      </div>
+      <div class="field">
+        <label>Brewery</label>
+        <input type="text" placeholder="e.g. BrewDog">
+      </div>
+      <div class="field">
+        <label>Style</label>
+        <select>
+          <option>IPA</option>
+          <option>Stout</option>
+          <option>Pilsner</option>
+          <option>Hefeweizen</option>
+          <option>Sour / Lambic</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Venue / Location</label>
+        <input type="text" placeholder="e.g. The Craft Tap, London">
+      </div>
+      <div class="field">
+        <label>Rating</label>
+        <div class="rating-input">
+          <button>1</button>
+          <button>2</button>
+          <button>3</button>
+          <button class="sel">4</button>
+          <button>5</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Tasting Notes</label>
+        <textarea placeholder="What do you taste? Aroma, mouthfeel, finish…"></textarea>
+      </div>
+      <button class="btn-log">Log This Beer</button>
+    </div>
+  </aside>
+
+  <!-- Right: Friends feed -->
+  <main class="right">
+    <div class="feed-header">
+      <div class="feed-title">Friends' Activity</div>
+      <div class="feed-count">14 logs today</div>
+    </div>
+    <div class="feed">
+
+      <div class="feed-item">
+        <div class="feed-avatar">B</div>
+        <div>
+          <div class="feed-friend">Bob Brewer · 12 min ago</div>
+          <div class="feed-beer-name">Cantillon Gueuze</div>
+          <div class="feed-brewery">Cantillon · Sour / Lambic · 5.0%</div>
+          <div class="feed-stars">
+            <div class="feed-star"></div><div class="feed-star"></div><div class="feed-star"></div><div class="feed-star"></div><div class="feed-star"></div>
+          </div>
+          <div class="feed-note">Mind-blowing. Worth every cent. Nothing prepares you for the complexity.</div>
+          <div class="feed-meta"><span>📍 Birreria Roma, Rome</span><span>❤ 2 likes</span></div>
+        </div>
+      </div>
+
+      <div class="feed-item">
+        <div class="feed-avatar">C</div>
+        <div>
+          <div class="feed-friend">Carol Pils · 1h ago</div>
+          <div class="feed-beer-name">Augustiner Helles</div>
+          <div class="feed-brewery">Augustiner-Bräu · Lager · 5.2%</div>
+          <div class="feed-stars">
+            <div class="feed-star"></div><div class="feed-star"></div><div class="feed-star"></div><div class="feed-star"></div><div class="feed-star"></div>
+          </div>
+          <div class="feed-note">The best Helles in the world. No debate. Crystal clear, soft bitterness.</div>
+          <div class="feed-meta"><span>📍 Augustinerkeller, Munich</span><span>❤ 4 likes</span></div>
+        </div>
+      </div>
+
+      <div class="feed-item">
+        <div class="feed-avatar">D</div>
+        <div>
+          <div class="feed-friend">Dave Lager · 2h ago</div>
+          <div class="feed-beer-name">Chimay Blue</div>
+          <div class="feed-brewery">Abbaye de Scourmont · Quadrupel · 9.0%</div>
+          <div class="feed-stars">
+            <div class="feed-star"></div><div class="feed-star"></div><div class="feed-star"></div><div class="feed-star"></div><div class="feed-star"></div>
+          </div>
+          <div class="feed-note">Rich, dark, and perfect with aged cheese. Fig and plum in the finish.</div>
+          <div class="feed-meta"><span>📍 Home, Paris</span><span>❤ 3 likes</span></div>
+        </div>
+      </div>
+
+      <div class="feed-item">
+        <div class="feed-avatar">B</div>
+        <div>
+          <div class="feed-friend">Bob Brewer · 3h ago</div>
+          <div class="feed-beer-name">Delirium Tremens</div>
+          <div class="feed-brewery">Huyghe · Belgian Strong Ale · 8.5%</div>
+          <div class="feed-stars">
+            <div class="feed-star"></div><div class="feed-star"></div><div class="feed-star"></div><div class="feed-star"></div><div class="feed-star empty"></div>
+          </div>
+          <div class="feed-note">Pink elephants everywhere. Spicy yeast, ripe banana, dry finish.</div>
+          <div class="feed-meta"><span>📍 De Koninck Tap, Antwerp</span><span>❤ 1 like</span></div>
+        </div>
+      </div>
+
+      <div class="feed-item">
+        <div class="feed-avatar">E</div>
+        <div>
+          <div class="feed-friend">Elena Hop · 5h ago</div>
+          <div class="feed-beer-name">Orval</div>
+          <div class="feed-brewery">Abbaye d'Orval · Trappist Ale · 6.2%</div>
+          <div class="feed-stars">
+            <div class="feed-star"></div><div class="feed-star"></div><div class="feed-star"></div><div class="feed-star"></div><div class="feed-star"></div>
+          </div>
+          <div class="feed-note">Unique Brett character. Earthy, funky, citrus peel. A true classic every time.</div>
+          <div class="feed-meta"><span>📍 Home, Brussels</span><span>❤ 6 likes</span></div>
+        </div>
+      </div>
+
+      <div class="feed-item">
+        <div class="feed-avatar">C</div>
+        <div>
+          <div class="feed-friend">Carol Pils · 7h ago</div>
+          <div class="feed-beer-name">Vedett Extra White</div>
+          <div class="feed-brewery">Duvel Moortgat · Witbier · 4.7%</div>
+          <div class="feed-stars">
+            <div class="feed-star"></div><div class="feed-star"></div><div class="feed-star"></div><div class="feed-star empty"></div><div class="feed-star empty"></div>
+          </div>
+          <div class="feed-note">Refreshing, light citrus. Good sessionable white. Nothing groundbreaking.</div>
+          <div class="feed-meta"><span>📍 Café Central, Vienna</span><span>❤ 0 likes</span></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+</div>
+</body>
+</html>

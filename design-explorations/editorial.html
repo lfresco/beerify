@@ -1,0 +1,648 @@
+<!--
+  DESIGN RATIONALE — Editorial / Zine
+  Typography: Playfair Display for headlines (serifs, classical weight contrast); Source Sans 3 for body copy; tight column layout mimics a printed tasting card or spirits magazine spread.
+  Color logic: Warm cream (#FAF7F2) base, aged-paper tone. Ink-black headlines, terracotta (#C0542A) for accent rules and callouts — like old bottle labels. No UI-chrome colors; everything feels printed.
+  Spacing system: Column gutters, horizontal rules between sections, generous leading. The "page" metaphor is literal — this feels like a formatted document, not a web app.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BeerLog — Editorial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Source+Sans+3:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #FAF7F2;
+    --paper: #F2EDE4;
+    --ink: #1A1208;
+    --mid: #5A4A35;
+    --muted: #9A8B78;
+    --rule: #D4C9BA;
+    --terra: #C0542A;
+    --terra-light: #FBF0EB;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Source Sans 3', system-ui, sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .page {
+    max-width: 1280px;
+    margin: 0 auto;
+    background: var(--cream);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Masthead ── */
+  .masthead {
+    padding: 16px 40px 12px;
+    border-bottom: 3px double var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--cream);
+  }
+  .masthead-left { display: flex; flex-direction: column; }
+  .masthead-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    line-height: 1;
+  }
+  .masthead-tagline {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 300;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 3px;
+  }
+  .masthead-nav {
+    display: flex;
+    gap: 24px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .masthead-nav a { text-decoration: none; color: inherit; }
+  .masthead-nav a.active { color: var(--terra); border-bottom: 1px solid var(--terra); }
+  .masthead-date {
+    font-size: 11px;
+    color: var(--muted);
+    font-style: italic;
+    text-align: right;
+  }
+  .masthead-user {
+    font-family: 'Playfair Display', serif;
+    font-size: 13px;
+    font-style: italic;
+    color: var(--mid);
+  }
+
+  /* ── Main layout: 3 columns ── */
+  .columns {
+    display: grid;
+    grid-template-columns: 280px 1fr 260px;
+    flex: 1;
+    gap: 0;
+  }
+
+  /* ── Column 1: Beer card ── */
+  .col-beer {
+    border-right: 1px solid var(--rule);
+    padding: 28px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .col-label {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--terra);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .col-label::after { content: ''; flex: 1; height: 1px; background: var(--terra); }
+
+  .beer-photo {
+    width: 100%;
+    aspect-ratio: 3/4;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .beer-photo-icon { font-size: 56px; opacity: .15; }
+  .beer-photo-caption {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 8px 10px;
+    background: var(--ink);
+    color: var(--cream);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .beer-headline {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 26px;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    color: var(--ink);
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 8px;
+    margin-bottom: 4px;
+  }
+  .beer-byline {
+    font-size: 12px;
+    font-style: italic;
+    color: var(--mid);
+    font-family: 'Playfair Display', serif;
+    margin-bottom: 10px;
+  }
+
+  .tasting-card {
+    background: var(--terra-light);
+    border: 1px solid var(--terra);
+    padding: 14px;
+  }
+  .tasting-card-title {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--terra);
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--terra);
+  }
+  .tasting-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    padding: 3px 0;
+    border-bottom: 1px dotted var(--rule);
+  }
+  .tasting-row:last-child { border-bottom: none; }
+  .tasting-key { color: var(--mid); font-weight: 300; }
+  .tasting-val { font-weight: 600; color: var(--ink); }
+
+  .beer-rating-editorial {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .rating-score {
+    font-family: 'Playfair Display', serif;
+    font-size: 48px;
+    font-weight: 900;
+    line-height: 1;
+    color: var(--ink);
+  }
+  .rating-denom { font-size: 18px; color: var(--muted); }
+  .rating-label {
+    font-size: 11px;
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  .beer-notes-text {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--mid);
+    font-weight: 300;
+    font-style: italic;
+    font-family: 'Playfair Display', serif;
+  }
+  .beer-notes-text::before { content: '\201C'; font-size: 32px; line-height: 0; vertical-align: -10px; margin-right: 4px; color: var(--terra); }
+  .beer-notes-text::after { content: '\201D'; font-size: 32px; line-height: 0; vertical-align: -10px; margin-left: 4px; color: var(--terra); }
+
+  .social-notice {
+    font-size: 12px;
+    color: var(--muted);
+    font-style: italic;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .avatars { display: flex; }
+  .avatar-sm {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--mid);
+    border: 2px solid var(--cream);
+    margin-left: -7px;
+    font-size: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--cream);
+    font-weight: 700;
+  }
+  .avatar-sm:first-child { margin-left: 0; }
+
+  /* ── Column 2: Log entry form ── */
+  .col-log {
+    padding: 28px 32px;
+    border-right: 1px solid var(--rule);
+  }
+
+  .form-section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--ink);
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 8px;
+    margin-bottom: 20px;
+  }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 20px; }
+  .form-field { display: flex; flex-direction: column; }
+  .form-field.full { grid-column: 1 / -1; }
+  .form-field label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 5px;
+  }
+  .form-field input,
+  .form-field textarea,
+  .form-field select {
+    border: none;
+    border-bottom: 1px solid var(--rule);
+    background: transparent;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 15px;
+    color: var(--ink);
+    padding: 6px 0;
+    outline: none;
+    resize: none;
+  }
+  .form-field input:focus,
+  .form-field textarea:focus {
+    border-bottom-color: var(--terra);
+  }
+  .form-field textarea { height: 80px; }
+  .form-field input::placeholder { color: var(--muted); font-style: italic; font-weight: 300; }
+
+  .rating-field { margin-top: 20px; margin-bottom: 20px; }
+  .rating-field label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 10px;
+  }
+  .rating-editorial {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--rule);
+  }
+  .rating-opt {
+    flex: 1;
+    padding: 12px 0;
+    text-align: center;
+    cursor: pointer;
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-weight: 700;
+    border-right: 1px solid var(--rule);
+    background: none;
+    border-top: none;
+    border-bottom: none;
+    border-left: none;
+    color: var(--muted);
+    font-family: inherit;
+    border-right: 1px solid var(--rule);
+  }
+  .rating-opt:last-child { border-right: none; }
+  .rating-opt.sel {
+    background: var(--ink);
+    color: var(--cream);
+  }
+
+  .submit-area { margin-top: 24px; }
+  .btn-submit {
+    width: 100%;
+    padding: 14px;
+    background: var(--ink);
+    color: var(--cream);
+    border: none;
+    font-family: 'Playfair Display', serif;
+    font-size: 15px;
+    font-style: italic;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+  }
+  .btn-submit:hover { background: var(--terra); }
+
+  .form-note {
+    margin-top: 10px;
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    font-style: italic;
+  }
+
+  /* ── Column 3: Friends feed ── */
+  .col-feed {
+    padding: 28px 20px;
+    overflow-y: auto;
+  }
+
+  .feed-item {
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .feed-item:last-child { border-bottom: none; }
+
+  .feed-item-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .feed-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--mid);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--cream);
+    flex-shrink: 0;
+  }
+  .feed-friend {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .feed-time {
+    font-size: 11px;
+    color: var(--muted);
+    font-style: italic;
+    margin-left: auto;
+  }
+
+  .feed-beer-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.2;
+    margin-bottom: 2px;
+  }
+  .feed-brewery { font-size: 11px; color: var(--muted); margin-bottom: 5px; }
+  .feed-score {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--terra);
+    line-height: 1;
+    margin-bottom: 5px;
+  }
+  .feed-score span { font-size: 13px; color: var(--muted); }
+  .feed-note {
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--mid);
+    font-style: italic;
+    font-family: 'Playfair Display', serif;
+    font-weight: 400;
+    margin-bottom: 5px;
+  }
+  .feed-meta {
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+  }
+  .feed-like { color: var(--terra); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Masthead -->
+  <header class="masthead">
+    <div class="masthead-left">
+      <div class="masthead-title">BeerLog</div>
+      <div class="masthead-tagline">A tasting journal for the discerning drinker</div>
+    </div>
+    <nav class="masthead-nav">
+      <a href="#" class="active">My Log</a>
+      <a href="#">Friends</a>
+      <a href="#">Explore</a>
+      <a href="#">Stats</a>
+    </nav>
+    <div>
+      <div class="masthead-date">Wednesday, 13 August 2026</div>
+      <div class="masthead-user">Logged in as alice</div>
+    </div>
+  </header>
+
+  <!-- 3-column layout -->
+  <div class="columns">
+
+    <!-- Col 1: Beer card -->
+    <div class="col-beer">
+      <div class="col-label">Current Entry</div>
+
+      <div class="beer-photo">
+        <div class="beer-photo-icon">🍺</div>
+        <div class="beer-photo-caption">Imperial Stout · 11.2% ABV</div>
+      </div>
+
+      <div>
+        <div class="beer-headline">Darkness</div>
+        <div class="beer-byline">Surly Brewing Co., Minneapolis, MN</div>
+      </div>
+
+      <div class="tasting-card">
+        <div class="tasting-card-title">Tasting Card</div>
+        <div class="tasting-row"><span class="tasting-key">Style</span><span class="tasting-val">Imperial Stout</span></div>
+        <div class="tasting-row"><span class="tasting-key">ABV</span><span class="tasting-val">11.2%</span></div>
+        <div class="tasting-row"><span class="tasting-key">Venue</span><span class="tasting-val">Birreria Roma</span></div>
+        <div class="tasting-row"><span class="tasting-key">City</span><span class="tasting-val">Rome, Italy</span></div>
+        <div class="tasting-row"><span class="tasting-key">Date</span><span class="tasting-val">13 Aug 2026</span></div>
+      </div>
+
+      <div class="beer-rating-editorial">
+        <div class="rating-score">4<span class="rating-denom">/5</span></div>
+        <div class="rating-label">Exceptional —<br>highly recommended</div>
+      </div>
+
+      <div class="beer-notes-text">
+        Roasted coffee and dark chocolate up front, velvet mouthfeel, subtle vanilla warmth in the finish.
+      </div>
+
+      <div class="social-notice">
+        <div class="avatars">
+          <div class="avatar-sm">B</div>
+          <div class="avatar-sm">C</div>
+          <div class="avatar-sm">D</div>
+        </div>
+        Bob, Carol & 1 other also tried this
+      </div>
+    </div>
+
+    <!-- Col 2: Log form -->
+    <div class="col-log">
+      <div class="form-section-title">Record a New Entry</div>
+
+      <div class="form-grid">
+        <div class="form-field">
+          <label>Beer Name</label>
+          <input type="text" placeholder="e.g. Punk IPA">
+        </div>
+        <div class="form-field">
+          <label>Brewery</label>
+          <input type="text" placeholder="e.g. BrewDog">
+        </div>
+        <div class="form-field">
+          <label>Style</label>
+          <select>
+            <option>IPA</option>
+            <option>Stout</option>
+            <option>Pilsner</option>
+            <option>Hefeweizen</option>
+            <option>Sour / Lambic</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label>ABV (%)</label>
+          <input type="text" placeholder="e.g. 6.5">
+        </div>
+        <div class="form-field full">
+          <label>Venue / Location</label>
+          <input type="text" placeholder="e.g. The Craft Tap, London">
+        </div>
+        <div class="form-field full">
+          <label>Tasting Notes</label>
+          <textarea placeholder="Describe the aroma, appearance, taste, mouthfeel, and finish…"></textarea>
+        </div>
+      </div>
+
+      <div class="rating-field">
+        <label>Overall Score</label>
+        <div class="rating-editorial">
+          <button class="rating-opt">1</button>
+          <button class="rating-opt">2</button>
+          <button class="rating-opt">3</button>
+          <button class="rating-opt sel">4</button>
+          <button class="rating-opt">5</button>
+        </div>
+      </div>
+
+      <div class="submit-area">
+        <button class="btn-submit">Record this Entry</button>
+        <div class="form-note">Your log is visible to your friends on BeerLog.</div>
+      </div>
+    </div>
+
+    <!-- Col 3: Friends feed -->
+    <div class="col-feed">
+      <div class="col-label" style="margin-bottom:20px">Friends' Logs</div>
+
+      <div class="feed-item">
+        <div class="feed-item-head">
+          <div class="feed-avatar">B</div>
+          <div class="feed-friend">Bob Brewer</div>
+          <div class="feed-time">12 min ago</div>
+        </div>
+        <div class="feed-beer-name">Cantillon Gueuze</div>
+        <div class="feed-brewery">Cantillon · Sour / Lambic · 5.0%</div>
+        <div class="feed-score">5<span>/5</span></div>
+        <div class="feed-note">Mind-blowing. Worth every cent. Nothing prepares you for the complexity.</div>
+        <div class="feed-meta">
+          <span>📍 Birreria Roma, Rome</span>
+          <span class="feed-like">♥ 2</span>
+        </div>
+      </div>
+
+      <div class="feed-item">
+        <div class="feed-item-head">
+          <div class="feed-avatar">C</div>
+          <div class="feed-friend">Carol Pils</div>
+          <div class="feed-time">1h ago</div>
+        </div>
+        <div class="feed-beer-name">Augustiner Helles</div>
+        <div class="feed-brewery">Augustiner-Bräu · Lager · 5.2%</div>
+        <div class="feed-score">5<span>/5</span></div>
+        <div class="feed-note">The best Helles in the world. Crystal clear, softly bitter, effortlessly perfect.</div>
+        <div class="feed-meta">
+          <span>📍 Augustinerkeller, Munich</span>
+          <span class="feed-like">♥ 4</span>
+        </div>
+      </div>
+
+      <div class="feed-item">
+        <div class="feed-item-head">
+          <div class="feed-avatar">D</div>
+          <div class="feed-friend">Dave Lager</div>
+          <div class="feed-time">2h ago</div>
+        </div>
+        <div class="feed-beer-name">Chimay Blue</div>
+        <div class="feed-brewery">Abbaye de Scourmont · Quadrupel · 9.0%</div>
+        <div class="feed-score">5<span>/5</span></div>
+        <div class="feed-note">Rich, dark, perfect with aged cheese. Fig and plum in the finish.</div>
+        <div class="feed-meta">
+          <span>📍 Home, Paris</span>
+          <span class="feed-like">♥ 3</span>
+        </div>
+      </div>
+
+      <div class="feed-item">
+        <div class="feed-item-head">
+          <div class="feed-avatar">B</div>
+          <div class="feed-friend">Bob Brewer</div>
+          <div class="feed-time">3h ago</div>
+        </div>
+        <div class="feed-beer-name">Delirium Tremens</div>
+        <div class="feed-brewery">Huyghe · Belgian Strong Ale · 8.5%</div>
+        <div class="feed-score">4<span>/5</span></div>
+        <div class="feed-note">Spicy yeast, ripe banana, dry finish. Pink elephants everywhere.</div>
+        <div class="feed-meta">
+          <span>📍 De Koninck, Antwerp</span>
+          <span class="feed-like">♥ 1</span>
+        </div>
+      </div>
+
+      <div class="feed-item">
+        <div class="feed-item-head">
+          <div class="feed-avatar">E</div>
+          <div class="feed-friend">Elena Hop</div>
+          <div class="feed-time">5h ago</div>
+        </div>
+        <div class="feed-beer-name">Orval</div>
+        <div class="feed-brewery">Abbaye d'Orval · Trappist · 6.2%</div>
+        <div class="feed-score">5<span>/5</span></div>
+        <div class="feed-note">Unique Brett character. Earthy, funky, citrus. A true classic every time.</div>
+        <div class="feed-meta">
+          <span>📍 Home, Brussels</span>
+          <span class="feed-like">♥ 6</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

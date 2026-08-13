@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BeerLog — Design Explorations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #0f0f0f;
+    color: #f0f0f0;
+    min-height: 100vh;
+    padding: 48px 40px 80px;
+  }
+
+  .header {
+    margin-bottom: 48px;
+    border-bottom: 1px solid #222;
+    padding-bottom: 28px;
+  }
+  .header-eyebrow {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #555;
+    margin-bottom: 8px;
+  }
+  .header-title {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: #fff;
+    margin-bottom: 8px;
+  }
+  .header-sub {
+    font-size: 15px;
+    font-weight: 300;
+    color: #777;
+    max-width: 560px;
+    line-height: 1.6;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 2px;
+  }
+
+  .card {
+    text-decoration: none;
+    display: block;
+    background: #151515;
+    border: 1px solid #1e1e1e;
+    padding: 28px 28px 24px;
+    transition: background .12s, border-color .12s;
+    position: relative;
+    overflow: hidden;
+  }
+  .card:hover {
+    background: #1c1c1c;
+    border-color: #333;
+  }
+  .card:hover .card-arrow { opacity: 1; transform: translateX(0); }
+
+  .card-tag {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    display: inline-block;
+    padding: 3px 8px;
+  }
+  .tag-minimal { background: #f0f0f0; color: #111; }
+  .tag-maximal { background: #fff; color: #000; }
+  .tag-editorial { background: #C0542A; color: #fff; }
+  .tag-color { background: #F5A623; color: #111; }
+
+  .card-variant {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    color: #444;
+    font-family: 'Menlo', 'Courier New', monospace;
+    margin-bottom: 10px;
+  }
+
+  .card-title {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: #fff;
+    margin-bottom: 8px;
+    line-height: 1.2;
+  }
+
+  .card-desc {
+    font-size: 13px;
+    font-weight: 300;
+    color: #777;
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+
+  .card-meta {
+    display: flex;
+    gap: 16px;
+    font-size: 11px;
+    color: #444;
+  }
+  .card-meta-item { display: flex; flex-direction: column; gap: 2px; }
+  .card-meta-label { font-weight: 600; color: #333; text-transform: uppercase; letter-spacing: 0.06em; font-size: 9px; }
+  .card-meta-val { color: #666; }
+
+  .card-arrow {
+    position: absolute;
+    top: 28px;
+    right: 28px;
+    font-size: 20px;
+    color: #444;
+    opacity: 0;
+    transform: translateX(-6px);
+    transition: opacity .12s, transform .12s;
+  }
+
+  .card-swatch {
+    width: 28px;
+    height: 4px;
+    margin-bottom: 16px;
+  }
+
+  .footer {
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid #1e1e1e;
+    font-size: 12px;
+    color: #444;
+    font-weight: 300;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-eyebrow">BeerLog · UI/UX Exploration · August 2026</div>
+  <div class="header-title">Design Variants</div>
+  <div class="header-sub">Five standalone mockups of the same core screens — a beer log entry card, a friends' activity feed, and a log-entry form — each in a different visual direction. Click any card to open the full mockup.</div>
+</div>
+
+<div class="grid">
+
+  <!-- 1. Minimal Mono -->
+  <a href="minimal-mono.html" class="card">
+    <div class="card-swatch" style="background: #111;"></div>
+    <div class="card-tag tag-minimal">Minimal · Mono</div>
+    <div class="card-variant">minimal-mono.html</div>
+    <div class="card-title">Restrained Grayscale</div>
+    <div class="card-desc">Black, white, and mid-grays only. Heavy whitespace, 1px borders instead of shadows, type scale as the sole hierarchy tool. Calm and focused — content first.</div>
+    <div class="card-meta">
+      <div class="card-meta-item">
+        <span class="card-meta-label">Color</span>
+        <span class="card-meta-val">Grayscale only</span>
+      </div>
+      <div class="card-meta-item">
+        <span class="card-meta-label">Density</span>
+        <span class="card-meta-val">Low — lots of air</span>
+      </div>
+      <div class="card-meta-item">
+        <span class="card-meta-label">Best for</span>
+        <span class="card-meta-val">Sober, long sessions</span>
+      </div>
+    </div>
+    <span class="card-arrow">→</span>
+  </a>
+
+  <!-- 2. Minimal Color -->
+  <a href="minimal-color.html" class="card">
+    <div class="card-swatch" style="background: linear-gradient(90deg, #f0f0f0 60%, #E87B1E 100%);"></div>
+    <div class="card-tag tag-color">Minimal · Color</div>
+    <div class="card-variant">minimal-color.html</div>
+    <div class="card-title">One Amber Accent</div>
+    <div class="card-desc">Same disciplined layout as mono, but a single amber/golden accent color for ratings, active states, and the "new log" badge. Everything else stays neutral. Warm without being loud.</div>
+    <div class="card-meta">
+      <div class="card-meta-item">
+        <span class="card-meta-label">Color</span>
+        <span class="card-meta-val">Neutral + 1 amber</span>
+      </div>
+      <div class="card-meta-item">
+        <span class="card-meta-label">Density</span>
+        <span class="card-meta-val">Low — clean</span>
+      </div>
+      <div class="card-meta-item">
+        <span class="card-meta-label">Best for</span>
+        <span class="card-meta-val">Likely production v1</span>
+      </div>
+    </div>
+    <span class="card-arrow">→</span>
+  </a>
+
+  <!-- 3. Maximal Mono -->
+  <a href="maximal-mono.html" class="card">
+    <div class="card-swatch" style="background: #fff;"></div>
+    <div class="card-tag tag-maximal">Maximal · Mono</div>
+    <div class="card-variant">maximal-mono.html</div>
+    <div class="card-title">Dark Dashboard Energy</div>
+    <div class="card-desc">Dark background, giant type, inverted sections, dense information rows. All contrast comes from scale and layout — no color. Think editorial dashboard meets a beer-obsessive's Bloomberg terminal.</div>
+    <div class="card-meta">
+      <div class="card-meta-item">
+        <span class="card-meta-label">Color</span>
+        <span class="card-meta-val">Black/white inverted</span>
+      </div>
+      <div class="card-meta-item">
+        <span class="card-meta-label">Density</span>
+        <span class="card-meta-val">High — lots on screen</span>
+      </div>
+      <div class="card-meta-item">
+        <span class="card-meta-label">Best for</span>
+        <span class="card-meta-val">Power users, stats nerds</span>
+      </div>
+    </div>
+    <span class="card-arrow">→</span>
+  </a>
+
+  <!-- 4. Maximal Color -->
+  <a href="maximal-color.html" class="card">
+    <div class="card-swatch" style="background: linear-gradient(90deg, #1A3A2A, #F5A623, #E05252);"></div>
+    <div class="card-tag tag-color">Maximal · Color</div>
+    <div class="card-variant">maximal-color.html</div>
+    <div class="card-title">Cheers Energy</div>
+    <div class="card-desc">Bold color blocking: forest green for the log panel, amber hero, coral for new-item alerts, purple for the feed header. High energy, expressive, and unmistakably "alive" — appropriate for a social drinking moment.</div>
+    <div class="card-meta">
+      <div class="card-meta-item">
+        <span class="card-meta-label">Color</span>
+        <span class="card-meta-val">Multi-zone palette</span>
+      </div>
+      <div class="card-meta-item">
+        <span class="card-meta-label">Density</span>
+        <span class="card-meta-val">High — expressive</span>
+      </div>
+      <div class="card-meta-item">
+        <span class="card-meta-label">Best for</span>
+        <span class="card-meta-val">Mobile app / fun brand</span>
+      </div>
+    </div>
+    <span class="card-arrow">→</span>
+  </a>
+
+  <!-- NEW: Current UI × Maximal Mono -->
+  <a href="current-maximal-mono.html" class="card">
+    <div class="card-swatch" style="background: linear-gradient(90deg, #0a0a0a, #f8f8f8);"></div>
+    <div class="card-tag tag-maximal">Current UI · Mono</div>
+    <div class="card-variant">current-maximal-mono.html</div>
+    <div class="card-title">Current UI × Maximal Mono</div>
+    <div class="card-desc">Same feed layout as the live app, stripped to pure black/white/grayscale. All intensity comes from type weight and contrast: white-on-black button, clipped star shapes, photo gradient washes with no hue.</div>
+    <div class="card-meta">
+      <div class="card-meta-item">
+        <span class="card-meta-label">Layout</span>
+        <span class="card-meta-val">Current structure</span>
+      </div>
+      <div class="card-meta-item">
+        <span class="card-meta-label">Color</span>
+        <span class="card-meta-val">Grayscale only</span>
+      </div>
+      <div class="card-meta-item">
+        <span class="card-meta-label">Target</span>
+        <span class="card-meta-val">Mobile-first feed</span>
+      </div>
+    </div>
+    <span class="card-arrow">→</span>
+  </a>
+
+  <!-- NEW: Current UI × Maximal Color -->
+  <a href="current-maximal-color.html" class="card" style="border-color:#F5A623;border-width:2px;">
+    <div class="card-swatch" style="background: linear-gradient(90deg, #162E20, #F5A623, #E05252);"></div>
+    <div class="card-tag tag-color">↑ Recommended</div>
+    <div class="card-variant">current-maximal-color.html</div>
+    <div class="card-title">Current UI × Maximal Color</div>
+    <div class="card-desc">Exact replica of the live mobile feed (photo cards, avatar, stars, tasting note, location, cheers/comment actions, bottom nav) repainted with the maximal-color palette. Mobile phone shell, 390px wide.</div>
+    <div class="card-meta">
+      <div class="card-meta-item">
+        <span class="card-meta-label">Layout</span>
+        <span class="card-meta-val">Current structure</span>
+      </div>
+      <div class="card-meta-item">
+        <span class="card-meta-label">Color</span>
+        <span class="card-meta-val">Green + Amber + Coral</span>
+      </div>
+      <div class="card-meta-item">
+        <span class="card-meta-label">Target</span>
+        <span class="card-meta-val">Mobile-first feed</span>
+      </div>
+    </div>
+    <span class="card-arrow">→</span>
+  </a>
+
+  <!-- 5. Editorial -->
+  <a href="editorial.html" class="card">
+    <div class="card-swatch" style="background: linear-gradient(90deg, #FAF7F2, #C0542A);"></div>
+    <div class="card-tag tag-editorial">Editorial · Wildcard</div>
+    <div class="card-variant">editorial.html</div>
+    <div class="card-title">The Tasting Journal</div>
+    <div class="card-desc">Playfair Display serifs, cream paper background, terracotta rules, 3-column layout. Feels like a printed tasting card or spirits magazine spread. Calm, authoritative, designed for the contemplative drinker.</div>
+    <div class="card-meta">
+      <div class="card-meta-item">
+        <span class="card-meta-label">Color</span>
+        <span class="card-meta-val">Cream + terracotta</span>
+      </div>
+      <div class="card-meta-item">
+        <span class="card-meta-label">Density</span>
+        <span class="card-meta-val">Medium — columnar</span>
+      </div>
+      <div class="card-meta-item">
+        <span class="card-meta-label">Best for</span>
+        <span class="card-meta-val">Premium / connoisseur feel</span>
+      </div>
+    </div>
+    <span class="card-arrow">→</span>
+  </a>
+
+</div>
+
+<div class="footer">
+  All variants are standalone HTML files — no build step, no external JS, no local fonts. Open each in any browser at ~1280px width for the intended experience.
+</div>
+
+</body>
+</html>

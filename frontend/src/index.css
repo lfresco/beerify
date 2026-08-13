@@ -1,8 +1,38 @@
 @import "tailwindcss";
 
 @layer base {
+  /* Mobile default: pure black maximal-mono */
+  :root {
+    --bg:          #0a0a0a;
+    --card-bg:     #111111;
+    --card-border: #222222;
+    --nav-bg:      #111111;
+    --nav-border:  #222222;
+    --text-primary:   #f8f8f8;
+    --text-secondary: #888888;
+    --text-dim:       #444444;
+    --divider:     #2a2a2a;
+  }
+
+  /* Desktop (≥768px): slate palette matches original maximal-mono.html */
+  @media (min-width: 768px) {
+    :root {
+      --bg:          #0a0a0a;
+      --card-bg:     #111111;
+      --card-border: #222222;
+      --nav-bg:      #0a0a0a;
+      --nav-border:  #222222;
+      --text-primary:   #f0f0f0;
+      --text-secondary: #888888;
+      --text-dim:       #555555;
+      --divider:     #222222;
+    }
+  }
+
   body {
-    @apply bg-slate-900 text-slate-100 antialiased;
+    background-color: var(--bg);
+    color: var(--text-primary);
+    @apply antialiased;
   }
 
   dialog {

@@ -1,0 +1,549 @@
+<!--
+  DESIGN RATIONALE — Current UI × Maximal Mono
+  Same feed structure as the live app (photo cards, avatar, stars, tasting note, location,
+  cheers/comment actions, bottom nav, "+ Log beer" button) but all color stripped to pure
+  black/white/grayscale. Intensity comes from type scale and contrast: beer name at 22px/900
+  weight in white, inverted amber button becomes white-on-black, photo gradients are grayscale
+  washes, and the active nav item uses full white vs. dim gray. No hue anywhere.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>BeerLog — Feed (Maximal Mono)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0a0a0a;
+    --card:      #111111;
+    --card-alt:  #161616;
+    --border:    #222222;
+    --border-lt: #2a2a2a;
+    --white:     #f8f8f8;
+    --mid:       #888888;
+    --dim:       #444444;
+    --very-dim:  #2e2e2e;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body { height: 100%; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #050505;
+    color: var(--white);
+    font-size: 14px;
+    line-height: 1.5;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 24px 0 40px;
+  }
+
+  /* ── Phone shell ── */
+  .phone {
+    width: 390px;
+    min-height: 844px;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 32px 80px rgba(0,0,0,.9);
+    border-radius: 44px;
+    border: 6px solid #1a1a1a;
+  }
+
+  /* ── Status bar ── */
+  .status-bar {
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    flex-shrink: 0;
+    background: var(--bg);
+  }
+  .status-time {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--white);
+  }
+  .status-icons {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    font-size: 12px;
+    color: var(--white);
+  }
+
+  /* ── Top nav ── */
+  .topnav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 18px 12px;
+    flex-shrink: 0;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+  .topnav-title {
+    font-size: 26px;
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    color: var(--white);
+  }
+  .btn-log {
+    background: var(--white);
+    color: var(--bg);
+    border: none;
+    border-radius: 24px;
+    padding: 10px 18px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+  }
+  .btn-log:active { background: #ccc; }
+
+  /* ── Feed ── */
+  .feed {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    scrollbar-width: none;
+  }
+  .feed::-webkit-scrollbar { display: none; }
+
+  /* ── Card ── */
+  .card {
+    background: var(--card);
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  /* Photo */
+  .card-photo {
+    width: 100%;
+    aspect-ratio: 4/3;
+    background: var(--card-alt);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .card-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    filter: grayscale(100%);
+  }
+
+  /* ABV chip */
+  .photo-abv {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: var(--white);
+    color: var(--bg);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 20px;
+    letter-spacing: 0.02em;
+  }
+
+  /* Card body */
+  .card-body {
+    padding: 14px 16px 0;
+  }
+
+  /* Author row */
+  .author-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--white);
+    color: var(--bg);
+    font-size: 15px;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border: 2px solid var(--border-lt);
+  }
+  .avatar.mid {
+    background: var(--mid);
+    color: var(--bg);
+    border-color: var(--dim);
+  }
+  .avatar.dim {
+    background: var(--dim);
+    color: var(--white);
+    border-color: var(--very-dim);
+  }
+
+  .author-info { flex: 1; }
+  .author-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--white);
+    line-height: 1.2;
+  }
+  .author-time {
+    font-size: 11px;
+    color: var(--mid);
+    line-height: 1.3;
+  }
+  .author-tasted {
+    font-size: 11px;
+    color: var(--dim);
+  }
+
+  /* Beer name */
+  .beer-name {
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    color: var(--white);
+    line-height: 1.1;
+    margin-bottom: 7px;
+  }
+
+  /* Stars — filled as solid white squares/shapes */
+  .stars {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+  .star {
+    width: 16px;
+    height: 16px;
+    background: var(--white);
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  }
+  .star.empty {
+    background: var(--very-dim);
+  }
+
+  /* Tasting note */
+  .tasting-note {
+    font-size: 14px;
+    font-weight: 300;
+    color: rgba(248,248,248,.65);
+    line-height: 1.55;
+    margin-bottom: 10px;
+  }
+
+  /* Location */
+  .location {
+    font-size: 12px;
+    color: var(--mid);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 12px;
+  }
+
+  /* Divider */
+  .card-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 0 16px;
+  }
+
+  /* Actions */
+  .card-actions {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 10px 16px 14px;
+  }
+  .action-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--dim);
+    background: none;
+    border: none;
+    font-family: inherit;
+    cursor: pointer;
+    padding: 0;
+  }
+  .action-btn .icon {
+    font-size: 15px;
+    /* desaturate emoji */
+    filter: grayscale(1) brightness(0.7);
+  }
+  .action-btn.active {
+    color: var(--white);
+  }
+  .action-btn.active .icon {
+    filter: grayscale(1) brightness(1.2);
+  }
+
+  /* ── Bottom nav ── */
+  .bottom-nav {
+    display: flex;
+    align-items: stretch;
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 0 14px;
+    font-family: inherit;
+    font-size: 11px;
+    color: var(--dim);
+    gap: 4px;
+    border: none;
+    background: none;
+    cursor: pointer;
+  }
+  .nav-item.active {
+    color: var(--white);
+  }
+  .nav-icon {
+    font-size: 20px;
+    line-height: 1;
+    filter: grayscale(1);
+  }
+  .nav-item.active .nav-icon {
+    filter: grayscale(1) brightness(1.5);
+  }
+  .nav-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+</style>
+</head>
+<body>
+
+<div class="phone">
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <div class="status-time">16:38</div>
+    <div class="status-icons">
+      <span>●●●●</span>
+      <span>WiFi</span>
+      <span>🔋</span>
+    </div>
+  </div>
+
+  <!-- Top nav -->
+  <div class="topnav">
+    <div class="topnav-title">Feed</div>
+    <button class="btn-log">+ Log beer</button>
+  </div>
+
+  <!-- Feed -->
+  <div class="feed">
+
+    <!-- Card 1: Moretti -->
+    <div class="card">
+      <div class="card-photo">
+        <div style="position:absolute;inset:0;background:linear-gradient(135deg,#3a3a3a 0%,#1a1a1a 100%);"></div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:72px;opacity:.12;filter:grayscale(1);">🍺🍺</div>
+      </div>
+      <div class="card-body">
+        <div class="author-row">
+          <div class="avatar">A</div>
+          <div class="author-info">
+            <div class="author-name">andrea.morandini36</div>
+            <div class="author-time">Posted about 3 hours ago</div>
+            <div class="author-tasted">Tasted August 13th, 2026 2:06 PM</div>
+          </div>
+        </div>
+        <div class="beer-name">Moretti</div>
+        <div class="stars">
+          <div class="star"></div>
+          <div class="star"></div>
+          <div class="star"></div>
+          <div class="star"></div>
+          <div class="star empty"></div>
+        </div>
+        <div class="tasting-note">Pranzo alcolico</div>
+        <div class="location">📍 City, Lussingrande</div>
+      </div>
+      <div class="card-divider"></div>
+      <div class="card-actions">
+        <button class="action-btn">
+          <span class="icon">🍻</span>
+          <span>0</span>
+        </button>
+        <button class="action-btn">
+          <span class="icon">💬</span>
+          <span>0</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Card 2: Cantillon -->
+    <div class="card">
+      <div class="card-photo">
+        <div style="position:absolute;inset:0;background:linear-gradient(160deg,#2a2a2a 0%,#0d0d0d 100%);"></div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:64px;opacity:.15;filter:grayscale(1);">🍺🍺🍺</div>
+        <div class="photo-abv">5.0% ABV</div>
+      </div>
+      <div class="card-body">
+        <div class="author-row">
+          <div class="avatar mid">B</div>
+          <div class="author-info">
+            <div class="author-name">bob.brewer</div>
+            <div class="author-time">Posted about 5 hours ago</div>
+            <div class="author-tasted">Tasted August 13th, 2026 11:30 AM</div>
+          </div>
+        </div>
+        <div class="beer-name">Cantillon Gueuze</div>
+        <div class="stars">
+          <div class="star"></div>
+          <div class="star"></div>
+          <div class="star"></div>
+          <div class="star"></div>
+          <div class="star"></div>
+        </div>
+        <div class="tasting-note">Mind-blowing. Worth every cent. Nothing prepares you for the complexity of this lambic.</div>
+        <div class="location">📍 Bar, Birreria Roma · Rome</div>
+      </div>
+      <div class="card-divider"></div>
+      <div class="card-actions">
+        <button class="action-btn active">
+          <span class="icon">🍻</span>
+          <span>2</span>
+        </button>
+        <button class="action-btn">
+          <span class="icon">💬</span>
+          <span>1</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Card 3: Augustiner -->
+    <div class="card">
+      <div class="card-photo">
+        <div style="position:absolute;inset:0;background:linear-gradient(135deg,#333 0%,#1c1c1c 100%);"></div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:72px;opacity:.12;filter:grayscale(1);">🌾🍺</div>
+        <div class="photo-abv">5.2% ABV</div>
+      </div>
+      <div class="card-body">
+        <div class="author-row">
+          <div class="avatar dim">C</div>
+          <div class="author-info">
+            <div class="author-name">carol.pils</div>
+            <div class="author-time">Posted about 7 hours ago</div>
+            <div class="author-tasted">Tasted August 13th, 2026 9:15 AM</div>
+          </div>
+        </div>
+        <div class="beer-name">Augustiner Helles</div>
+        <div class="stars">
+          <div class="star"></div>
+          <div class="star"></div>
+          <div class="star"></div>
+          <div class="star"></div>
+          <div class="star"></div>
+        </div>
+        <div class="tasting-note">The best Helles in the world. No debate. Crystal clear, soft bitterness, perfectly balanced.</div>
+        <div class="location">📍 Bar, Augustinerkeller · Munich</div>
+      </div>
+      <div class="card-divider"></div>
+      <div class="card-actions">
+        <button class="action-btn active">
+          <span class="icon">🍻</span>
+          <span>4</span>
+        </button>
+        <button class="action-btn">
+          <span class="icon">💬</span>
+          <span>2</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Card 4: Delirium -->
+    <div class="card">
+      <div class="card-photo">
+        <div style="position:absolute;inset:0;background:linear-gradient(135deg,#222 0%,#111 100%);"></div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:64px;opacity:.15;filter:grayscale(1);">🐘🍺</div>
+        <div class="photo-abv">8.5% ABV</div>
+      </div>
+      <div class="card-body">
+        <div class="author-row">
+          <div class="avatar mid">D</div>
+          <div class="author-info">
+            <div class="author-name">dave.lager</div>
+            <div class="author-time">Posted about 9 hours ago</div>
+            <div class="author-tasted">Tasted August 13th, 2026 7:45 AM</div>
+          </div>
+        </div>
+        <div class="beer-name">Delirium Tremens</div>
+        <div class="stars">
+          <div class="star"></div>
+          <div class="star"></div>
+          <div class="star"></div>
+          <div class="star"></div>
+          <div class="star empty"></div>
+        </div>
+        <div class="tasting-note">Pink elephants everywhere. Spicy yeast, ripe banana, dry finish. Dangerously drinkable for 8.5%.</div>
+        <div class="location">📍 Bar, De Koninck Tap · Antwerp</div>
+      </div>
+      <div class="card-divider"></div>
+      <div class="card-actions">
+        <button class="action-btn">
+          <span class="icon">🍻</span>
+          <span>1</span>
+        </button>
+        <button class="action-btn">
+          <span class="icon">💬</span>
+          <span>0</span>
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /feed -->
+
+  <!-- Bottom nav -->
+  <nav class="bottom-nav">
+    <button class="nav-item active">
+      <span class="nav-icon">📋</span>
+      <span class="nav-label">Feed</span>
+    </button>
+    <button class="nav-item">
+      <span class="nav-icon">📊</span>
+      <span class="nav-label">Stats</span>
+    </button>
+    <button class="nav-item">
+      <span class="nav-icon">👤</span>
+      <span class="nav-label">Me</span>
+    </button>
+  </nav>
+
+</div><!-- /phone -->
+
+</body>
+</html>
