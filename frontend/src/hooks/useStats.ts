@@ -17,22 +17,31 @@ export interface StatsFilters {
   endDate?: string
 }
 
+function toIsoDateBoundary(dateOnly: string, endOfDay = false): string | undefined {
+  if (!dateOnly) return undefined
+  const date = new Date(`${dateOnly}T${endOfDay ? '23:59:59.999' : '00:00:00.000'}`)
+  if (Number.isNaN(date.getTime())) return undefined
+  return date.toISOString()
+}
+
 function getRangeForFilters(filters?: StatsFilters): { start?: string; end?: string } {
   if (!filters || filters.period === 'all') return {}
 
-  const end = filters.endDate ? new Date(filters.endDate) : new Date()
-  const start = new Date(end)
-
   if (filters.period === 'custom') {
     return {
-      start: filters.startDate,
-      end: filters.endDate,
+      start: filters.startDate ? toIsoDateBoundary(filters.startDate) : undefined,
+      end: filters.endDate ? toIsoDateBoundary(filters.endDate, true) : undefined,
     }
   }
+
+  const end = new Date()
+  const start = new Date(end)
 
   if (filters.period === '30d') start.setDate(end.getDate() - 30)
   if (filters.period === '90d') start.setDate(end.getDate() - 90)
   if (filters.period === 'year') start.setFullYear(end.getFullYear() - 1)
+
+  start.setHours(0, 0, 0, 0)
 
   return {
     start: start.toISOString(),
@@ -114,11 +123,15 @@ export function useStats(filters?: StatsFilters) {
           beer_entries(rating, style_id, tasted_at)
         `)
       if (error) throw error
+      const startMs = range.start ? Date.parse(range.start) : null
+      const endMs = range.end ? Date.parse(range.end) : null
       return (data as any[] ?? [])
         .map((p: any) => {
           const entries = (p.beer_entries ?? []).filter((e: any) => {
-            if (range.start && e.tasted_at < range.start) return false
-            if (range.end && e.tasted_at > range.end) return false
+            const tastedAtMs = Date.parse(e.tasted_at)
+            if (Number.isNaN(tastedAtMs)) return false
+            if (startMs !== null && tastedAtMs < startMs) return false
+            if (endMs !== null && tastedAtMs > endMs) return false
             return true
           })
           const total = entries.length

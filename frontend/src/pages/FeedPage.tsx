@@ -8,7 +8,15 @@ import { Button } from '@/components/ui/Button'
 
 export default function FeedPage() {
   const user = useAuthStore((s) => s.user)
-  const { data, isLoading, error, refetch } = useFeed()
+  const {
+    data,
+    isLoading,
+    error,
+    refetch,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+  } = useFeed()
   const deleteEntry = useDeleteEntry()
   const [showForm, setShowForm] = useState(false)
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null)
@@ -60,6 +68,11 @@ export default function FeedPage() {
 
   const isEmpty = !isLoading && data?.length === 0
 
+  function handleLoadMore() {
+    if (!hasNextPage || isFetchingNextPage) return
+    void fetchNextPage()
+  }
+
   return (
     <>
       {/* ═══════════════════════════════════════════
@@ -105,6 +118,18 @@ export default function FeedPage() {
             onDelete={(id) => { void handleDelete(id) }}
           />
         ))}
+        {hasNextPage && (
+          <div className="pt-2 pb-4 flex justify-center">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleLoadMore}
+              disabled={isFetchingNextPage}
+            >
+              {isFetchingNextPage ? 'Loading…' : 'Load more posts'}
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* ═══════════════════════════════════════════
@@ -203,6 +228,18 @@ export default function FeedPage() {
                 desktopRow
               />
             ))}
+            {hasNextPage && (
+              <div className="p-4 flex justify-center">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleLoadMore}
+                  disabled={isFetchingNextPage}
+                >
+                  {isFetchingNextPage ? 'Loading…' : 'Load more posts'}
+                </Button>
+              </div>
+            )}
           </div>
         </main>
       </div>
@@ -236,4 +273,3 @@ export default function FeedPage() {
     </>
   )
 }
-

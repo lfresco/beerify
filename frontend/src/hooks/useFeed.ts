@@ -1,17 +1,25 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQueryClient, type InfiniteData } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/store/auth'
 import type { FeedEntry } from '@/types/database'
 
+const FEED_PAGE_SIZE = 30
+
 export function useFeed() {
   const user = useAuthStore((s) => s.user)
+  const queryKey = ['feed', user?.id] as const
 
-  return useQuery({
-    queryKey: ['feed', user?.id],
+  const query = useInfiniteQuery<FeedEntry[], Error, InfiniteData<FeedEntry[], number>, typeof queryKey, number>({
+    queryKey,
     enabled: !!user,
     staleTime: 1000 * 60 * 2,  // 2 minutes - reduce refetches
     gcTime: 1000 * 60 * 10,    // keep in cache 10 min
-    queryFn: async (): Promise<FeedEntry[]> => {
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, _allPages, lastPageParam) => (
+      lastPage.length === FEED_PAGE_SIZE ? Number(lastPageParam) + FEED_PAGE_SIZE : undefined
+    ),
+    queryFn: async ({ pageParam }): Promise<FeedEntry[]> => {
+      const offset = Number(pageParam)
       // Fetch entries visible to me (RLS handles group filtering)
       // Select only needed fields to reduce egress
       const { data: entries, error } = await supabase
@@ -29,7 +37,7 @@ export function useFeed() {
           beer_entry_tags(id, beer_entry_id, tagged_user_id, tagged_by_id, created_at, profiles!tagged_user_id(id, username, display_name, avatar_url))
         `)
         .order('created_at', { ascending: false })
-        .limit(30)
+        .range(offset, offset + FEED_PAGE_SIZE - 1)
 
       if (error) throw error
 
@@ -82,6 +90,13 @@ export function useFeed() {
       }))
     },
   })
+
+  const flatData: FeedEntry[] = query.data?.pages.flat() ?? []
+
+  return {
+    ...query,
+    data: flatData,
+  }
 }
 
 export function useUpdateEntry() {

@@ -36,7 +36,7 @@ export function StatsPanel({ filters }: StatsPanelProps) {
         ].map((s) => (
           <Card key={s.label} className="p-4 flex flex-col gap-1">
             <span className="text-2xl">{s.icon}</span>
-            <span className="text-2xl font-bold text-amber-400">{s.value}</span>
+            <span className="text-2xl font-bold text-[var(--text-primary)]">{s.value}</span>
             <span className="text-xs text-[var(--text-secondary)]">{s.label}</span>
           </Card>
         ))}
@@ -119,7 +119,7 @@ export function StatsPanel({ filters }: StatsPanelProps) {
                   {u.display_name[0]?.toUpperCase()}
                 </div>
                 <span className="flex-1 text-sm text-[var(--text-primary)]">{u.display_name}</span>
-                <span className="text-sm font-bold text-amber-400">{u.total} 🍺</span>
+                <span className="text-sm font-bold text-[var(--text-primary)]">{u.total} 🍺</span>
                 <span className="text-xs text-[var(--text-secondary)]">⭐ {u.avg}</span>
               </div>
             ))}
